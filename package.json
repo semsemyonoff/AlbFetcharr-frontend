@@ -1,0 +1,21 @@
+{
+  "name": "albfetcharr-frontend",
+  "version": "0.0.1",
+  "type": "module",
+  "scripts": {
+    "dev": "vite",
+    "build": "vite build",
+    "test": "vitest --run"
+  },
+  "dependencies": {
+    "react": "^18",
+    "react-dom": "^18"
+  },
+  "devDependencies": {
+    "@testing-library/dom": "^9",
+    "@vitejs/plugin-react": "^4",
+    "jsdom": "^29.1.1",
+    "vite": "^5",
+    "vitest": "^1"
+  }
+}
