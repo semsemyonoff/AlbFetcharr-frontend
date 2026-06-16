@@ -208,7 +208,8 @@ const SelectStep = ({
           </select>
         </div>
 
-        <div style={{ overflowX: 'auto' }}>
+        {/* Desktop / tablet: data table */}
+        <div className="wt-table-wrap" style={{ overflowX: 'auto' }}>
           <table className="wt">
             <thead>
               <tr>
@@ -297,6 +298,56 @@ const SelectStep = ({
               ))}
             </tbody>
           </table>
+        </div>
+
+        {/* Mobile: card list */}
+        <div className="wt-cards">
+          <div className="wt-cards-head">
+            <label className="selall">
+              <input
+                type="checkbox"
+                className="cb"
+                ref={(el) => el && (el.indeterminate = someOnPageSelected)}
+                checked={allOnPageSelected}
+                onChange={toggleAllPage}
+              />
+              <span>{t.select_all_page}</span>
+            </label>
+            <span className="selall-count">
+              {selectedOnPage.length}/{visible.length}
+            </span>
+          </div>
+          {visible.length === 0 && (
+            <div className="wt-cards-empty">{t.no_results}</div>
+          )}
+          {visible.map((a) => (
+            <label
+              key={a.id}
+              className={`wt-card ${selected.has(a.id) ? 'selected' : ''}`}
+            >
+              <input
+                type="checkbox"
+                className="cb"
+                checked={selected.has(a.id)}
+                onChange={() => toggleOne(a.id)}
+              />
+              <div className="cover">
+                <div className="vinyl-stripes"></div>
+                <span style={{ position: 'relative' }}>
+                  {a.artist.slice(0, 2)}
+                </span>
+              </div>
+              <div className="wt-card-meta">
+                <div className="artist">{a.artist}</div>
+                <div className="album">{a.album}</div>
+                <div className="wt-card-sub">
+                  {a.year}
+                  {a.tracks > 0 && ` · ${a.tracks} ${t.track_count}`} ·{' '}
+                  {ago(a.addedDaysAgo)}
+                </div>
+              </div>
+            </label>
+          ))}
         </div>
 
         <div className="pagination">
