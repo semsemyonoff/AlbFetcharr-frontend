@@ -37,32 +37,18 @@ export function sortAlbums(albums, key, direction = 'asc') {
   return list;
 }
 
-export function filterAlbums(albums, query, statusFilter = null) {
-  if (!query && !statusFilter) {
+export function filterAlbums(albums, query) {
+  if (!query) {
     return albums;
   }
 
-  return albums.filter((album) => {
-    // Status filter
-    if (statusFilter && album.status !== statusFilter) {
-      return false;
-    }
-
-    // Query filter
-    if (query) {
-      const q = query.toLowerCase().trim();
-      const matches =
-        album.artist.toLowerCase().includes(q) ||
-        album.album.toLowerCase().includes(q) ||
-        String(album.year).includes(q);
-
-      if (!matches) {
-        return false;
-      }
-    }
-
-    return true;
-  });
+  const q = query.toLowerCase().trim();
+  return albums.filter(
+    (album) =>
+      album.artist.toLowerCase().includes(q) ||
+      album.album.toLowerCase().includes(q) ||
+      String(album.year).includes(q)
+  );
 }
 
 export function paginate(rows, page, perPage) {
