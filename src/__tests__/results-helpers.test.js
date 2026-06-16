@@ -1,9 +1,5 @@
 import { describe, it, expect } from 'vitest';
-import {
-  scoreCandidate,
-  groupBySource,
-  getBestCandidate,
-} from '../results-helpers';
+import { scoreCandidate, getBestCandidate } from '../results-helpers';
 
 describe('results-helpers', () => {
   describe('scoreCandidate', () => {
@@ -61,53 +57,6 @@ describe('results-helpers', () => {
       const score = scoreCandidate(album, candidate);
       expect(score).toBeGreaterThanOrEqual(0);
       expect(score).toBeLessThanOrEqual(1);
-    });
-  });
-
-  describe('groupBySource', () => {
-    it('groups candidates by source', () => {
-      const candidates = [
-        { source: 'yandex', id: '1' },
-        { source: 'youtube_music', id: '2' },
-        { source: 'yandex', id: '3' },
-        { source: 'soundcloud', id: '4' },
-        { source: 'youtube_music', id: '5' },
-      ];
-      const grouped = groupBySource(candidates);
-      expect(grouped.yandex).toHaveLength(2);
-      expect(grouped.youtube_music).toHaveLength(2);
-      expect(grouped.soundcloud).toHaveLength(1);
-    });
-
-    it('omits sources not present in candidates', () => {
-      const candidates = [{ source: 'yandex', id: '1' }];
-      const grouped = groupBySource(candidates);
-      expect(grouped.yandex).toHaveLength(1);
-      expect(grouped.youtube_music).toBeUndefined();
-      expect(grouped.soundcloud).toBeUndefined();
-    });
-
-    it('includes unknown sources not in the original three', () => {
-      const candidates = [{ source: 'new_source', id: '1' }];
-      const grouped = groupBySource(candidates);
-      expect(grouped.new_source).toHaveLength(1);
-    });
-
-    it('maintains order of candidates within groups', () => {
-      const candidates = [
-        { source: 'yandex', id: '1', priority: 1 },
-        { source: 'yandex', id: '2', priority: 2 },
-        { source: 'yandex', id: '3', priority: 3 },
-      ];
-      const grouped = groupBySource(candidates);
-      expect(grouped.yandex[0].id).toBe('1');
-      expect(grouped.yandex[1].id).toBe('2');
-      expect(grouped.yandex[2].id).toBe('3');
-    });
-
-    it('handles empty array', () => {
-      const grouped = groupBySource([]);
-      expect(Object.keys(grouped)).toHaveLength(0);
     });
   });
 

@@ -76,12 +76,13 @@ production `base`, and the Vitest block.
     ├── results-step.jsx    # Step 2 — per-album source candidates
     ├── download-step.jsx   # Step 3 — live download progress (SSE)
     ├── select-helpers.js   # sortAlbums / filterAlbums / paginate
-    ├── results-helpers.js  # scoreCandidate (Levenshtein) / groupBySource / getBestCandidate
+    ├── results-helpers.js  # scoreCandidate (Levenshtein) / getBestCandidate
     ├── download-helpers.js # parseSSEEvent / applyProgressUpdate
-    ├── i18n.js             # I18N (en/ru) tables + AGO_FNS (relative-time formatters)
+    ├── accent-helpers.js   # ACCENT_PALETTES + accentVars/applyAccent/parseAccent (palette → CSS vars)
+    ├── i18n.js             # I18N (en/ru) tables + AGO_FNS + I18N_FNS/pluralRu (interpolation + RU plurals)
     ├── icons.jsx           # <Icon name=… /> named SVG set
     ├── tweaks-panel.jsx    # Generic settings UI kit + useTweaks() hook
-    ├── styles.css          # All styling via CSS variables; light/dark/system themes
+    ├── styles.css          # All styling via CSS variables; light/dark/system themes; responsive (1024/640/380)
     ├── assets/             # Static assets (logo)
     └── __tests__/          # Vitest specs for the pure helpers, i18n, theme resolution
 ```
@@ -92,6 +93,22 @@ in `src/__tests__/`; keep new business logic there so it stays unit-testable.
 `TweakRow`, `TweakSlider`, `TweakToggle`, `TweakRadio`, `TweakSelect`,
 `TweakText`, `TweakNumber`, `TweakColor`, `TweakButton`) plus the `useTweaks`
 state hook.
+
+Two helper patterns added in the design-audit pass are worth knowing:
+
+- **i18n interpolation lives outside the `I18N` tables.** A parity test asserts
+  every `I18N` value is a plain string, so any string needing a count or argument
+  is built by an exported function instead: `pluralRu(n, [one, few, many])`
+  applies real Russian plural rules, and `I18N_FNS` holds the per-message
+  interpolation functions (e.g. `batchPosition(lang, i, total)`). Add new
+  parametrized strings there, not as `I18N` entries, and never use the English
+  `n !== 1 ? 's' : ''` shape for RU.
+- **Accent palette → CSS vars is a pure helper.** `accent-helpers.js` maps a
+  `[from, to]` palette to `{ '--accent-blue', '--accent-teal', '--accent-grad' }`;
+  `applyAccent` writes them to `document.documentElement` and the chosen palette
+  persists under the namespaced `albfetcharr.accent` key (alongside
+  `albfetcharr.lang` / `albfetcharr.theme`), restored in the same `/api/config`
+  startup block.
 
 ## Step flow
 
@@ -136,3 +153,22 @@ their contracts):
   through `I18N`, and `en`/`ru` must keep identical key sets (a test enforces
   this). Code, comments, and log output are in English; `README.md` is in Russian
   (the canonical user-facing doc).
+
+## Responsive layout
+
+`styles.css` is desktop-first with **three breakpoints**, applied in this order
+(narrower tiers override wider ones):
+
+- `@media (max-width: 1024px)` — **tablet**: tighter app padding/gaps, smaller
+  step headers, denser action bar.
+- `@media (max-width: 640px)` — **mobile**: the app bar wraps to two rows, the
+  stepper scrolls horizontally, the action bar becomes sticky, and the Step-1
+  **table reflows to cards** — `.wt-table-wrap { display:none }` /
+  `.wt-cards { display:flex }`. Both markups live in `select-step.jsx` and render
+  from the same selection/sort state.
+- `@media (max-width: 380px)` — **small phone**: single-column download rows,
+  shrunk brand, tighter toggles.
+
+When adding layout, put the rule in the correct existing tier rather than
+introducing a new breakpoint. A static test (`styles-responsive.test.js`) guards
+that these widths and the `.wt-table-wrap` / `.wt-cards` selectors stay present.

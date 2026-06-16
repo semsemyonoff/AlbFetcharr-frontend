@@ -36,6 +36,7 @@ export const I18N = {
     of: 'of',
     page: 'Page',
     no_results: 'No albums match your filters',
+    select_all_page: 'Select all on page',
     selected: 'selected',
     bulk_search: 'Search selected',
     bulk_cancel: 'Cancel',
@@ -73,6 +74,8 @@ export const I18N = {
     settings: 'Settings',
     theme: 'Theme',
     language: 'Language',
+    accent: 'Accent',
+    gradient: 'Gradient',
     pick_best_matches: 'Pick the best matches',
     back_to_selection: 'Back to selection',
     ready_to_download: 'ready to download',
@@ -86,6 +89,35 @@ export const I18N = {
     format_lossy_high: 'Lossy (high)',
     format_flac: 'FLAC',
     format_default_ytdlp: 'Default (yt-dlp config)',
+    step_select: 'Select',
+    step_results: 'Results',
+    step_download: 'Download',
+    just_now: 'just now',
+    searching_title: 'Searching…',
+    select_to_download: 'Select albums to download',
+    download_other_tab:
+      'Download is already being watched in another tab — close it to take over',
+    download_running_server: 'A download is already running on the server',
+    error_prefix: 'Error',
+    no_progress_received: 'No progress received',
+    connection_retrying: 'Connection lost — retrying…',
+    connection_lost_backend: 'Lost connection to backend',
+    connection_lost: 'Connection lost',
+    empty_title: 'Nothing loaded yet',
+    empty_body: 'Connect to Lidarr to load the list of wanted albums.',
+    conn_error_title: 'Connection error',
+    conn_error_body: 'Failed to connect to Lidarr. Check your configuration.',
+    cancel: 'Cancel',
+    dl_downloading_title: 'Downloading…',
+    dl_all_done_title: 'All done',
+    dl_finished_errors_title: 'Finished with errors',
+    start_over: 'Start over',
+    done_all_set: 'All set!',
+    done_some_failed: 'Some downloads failed',
+    new_session: 'New session',
+    status_starting: 'Starting',
+    status_downloaded: 'Downloaded',
+    status_importing: 'Importing',
   },
   ru: {
     appName: 'AlbFetcharr',
@@ -124,6 +156,7 @@ export const I18N = {
     of: 'из',
     page: 'Стр.',
     no_results: 'Нет альбомов под фильтр',
+    select_all_page: 'Выбрать все на странице',
     selected: 'выбрано',
     bulk_search: 'Искать выбранное',
     bulk_cancel: 'Снять выбор',
@@ -161,6 +194,8 @@ export const I18N = {
     settings: 'Настройки',
     theme: 'Тема',
     language: 'Язык',
+    accent: 'Акцент',
+    gradient: 'Градиент',
     pick_best_matches: 'Выберите релевантные результаты',
     back_to_selection: 'К выбору альбомов',
     ready_to_download: 'к загрузке',
@@ -174,6 +209,36 @@ export const I18N = {
     format_lossy_high: 'Lossy (high)',
     format_flac: 'FLAC',
     format_default_ytdlp: 'Default (yt-dlp config)',
+    step_select: 'Выбор',
+    step_results: 'Результаты',
+    step_download: 'Загрузка',
+    just_now: 'только что',
+    searching_title: 'Идёт поиск…',
+    select_to_download: 'Выберите альбомы для загрузки',
+    download_other_tab:
+      'Загрузка уже открыта в другой вкладке — закройте её чтобы продолжить',
+    download_running_server: 'Загрузка уже запущена на сервере',
+    error_prefix: 'Ошибка',
+    no_progress_received: 'Нет ответа от сервера',
+    connection_retrying: 'Соединение потеряно — переподключение…',
+    connection_lost_backend: 'Соединение потеряно',
+    connection_lost: 'Соединение потеряно',
+    empty_title: 'Ничего не загружено',
+    empty_body: 'Подключитесь к Lidarr, чтобы получить список wanted-альбомов.',
+    conn_error_title: 'Ошибка подключения',
+    conn_error_body:
+      'Не удалось подключиться к Lidarr. Проверьте конфигурацию.',
+    cancel: 'Отмена',
+    dl_downloading_title: 'Загрузка…',
+    dl_all_done_title: 'Загрузка завершена',
+    dl_finished_errors_title: 'Загрузка завершена с ошибками',
+    start_over: 'Начать заново',
+    done_all_set: 'Готово!',
+    done_some_failed: 'Часть загрузок не удалась',
+    new_session: 'Новая сессия',
+    status_starting: 'Начинается',
+    status_downloaded: 'Скачано',
+    status_importing: 'Импорт в Lidarr',
   },
 };
 
@@ -196,4 +261,73 @@ export const AGO_FNS = {
           : d < 30
             ? `${d} дней назад`
             : `${Math.floor(d / 30)} мес. назад`,
+};
+
+// --- Pluralization & interpolation helpers ---------------------------------
+// These live OUTSIDE the I18N tables on purpose: every I18N value must stay a
+// plain string (the suite enforces it), so any string that depends on a count
+// is built here instead. RU uses the real plural categories (one / few / many);
+// EN is the simple singular/plural split.
+
+// Pick the correct RU form for n. forms = [one, few, many], e.g.
+// pluralRu(n, ['альбом', 'альбома', 'альбомов']).
+export function pluralRu(n, forms) {
+  const mod10 = n % 10;
+  const mod100 = n % 100;
+  if (mod10 === 1 && mod100 !== 11) return forms[0];
+  if (mod10 >= 2 && mod10 <= 4 && (mod100 < 12 || mod100 > 14)) return forms[1];
+  return forms[2];
+}
+
+// EN: pick [singular, plural] for n.
+const enPlural = (n, forms) => (n === 1 ? forms[0] : forms[1]);
+
+export const I18N_FNS = {
+  // app.jsx — interim "searching" screen subtitle.
+  searchingSubtitle: (lang, sources, albums) =>
+    lang === 'ru'
+      ? `Опрашиваем ${sources} ${pluralRu(sources, ['источник', 'источника', 'источников'])} по ${albums} ${pluralRu(albums, ['альбому', 'альбомам', 'альбомам'])}.`
+      : `Querying ${sources} ${enPlural(sources, ['source', 'sources'])} for ${albums} ${enPlural(albums, ['album', 'albums'])}.`,
+
+  // results-step.jsx — sub-header summarizing the search.
+  resultsSubtitle: (lang, searched, errors) =>
+    lang === 'ru'
+      ? `Поиск завершён по ${searched} ${pluralRu(searched, ['альбому', 'альбомам', 'альбомам'])} · ${errors} ${pluralRu(errors, ['ошибка', 'ошибки', 'ошибок'])} источников`
+      : `Searched ${searched} ${enPlural(searched, ['album', 'albums'])} · ${errors} source ${enPlural(errors, ['error', 'errors'])}`,
+
+  // download-step.jsx — sub-header when all downloads have finished.
+  downloadDoneSubtitle: (lang, success, total) =>
+    lang === 'ru'
+      ? `${success} из ${total} успешно`
+      : `${success} of ${total} succeeded`,
+
+  // download-step.jsx — sub-header while downloads are in progress.
+  downloadProgressSubtitle: (lang, success, total) =>
+    lang === 'ru'
+      ? `${success}/${total} готово · не закрывайте страницу`
+      : `${success}/${total} done · keep this tab open`,
+
+  // download-step.jsx — album's position in the download batch ("album N of M").
+  // NOTE: this is the BATCH position, not a track count — the backend does not
+  // supply per-track progress (see Post-Completion: download progress data).
+  batchPosition: (lang, index, total) =>
+    lang === 'ru'
+      ? `альбом ${index} из ${total}`
+      : `album ${index} of ${total}`,
+
+  // download-step.jsx — done-card body.
+  downloadDoneCardBody: (lang, importEnabled, success, failed) => {
+    if (lang === 'ru') {
+      const albForm = pluralRu(success, ['альбом', 'альбома', 'альбомов']);
+      const tail = failed > 0 ? `, ${failed} с ошибкой` : '';
+      const verb = importEnabled
+        ? `${pluralRu(success, ['импортирован', 'импортированы', 'импортированы'])} в Lidarr`
+        : `${pluralRu(success, ['сохранён', 'сохранены', 'сохранены'])} в папку загрузок`;
+      return `${success} ${albForm} ${verb}${tail}.`;
+    }
+    const albForm = enPlural(success, ['album', 'albums']);
+    const tail = failed > 0 ? `, ${failed} failed` : '';
+    const dest = importEnabled ? 'imported into Lidarr' : 'saved to downloads';
+    return `${success} ${albForm} ${dest}${tail}.`;
+  },
 };

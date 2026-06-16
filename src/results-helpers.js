@@ -37,17 +37,6 @@ export function scoreCandidate(album, candidate) {
   return similarity;
 }
 
-export function groupBySource(candidates) {
-  const grouped = {};
-  for (const cand of candidates) {
-    if (!Object.prototype.hasOwnProperty.call(grouped, cand.source)) {
-      grouped[cand.source] = [];
-    }
-    grouped[cand.source].push(cand);
-  }
-  return grouped;
-}
-
 export function getBestCandidate(candidates) {
   if (candidates.length === 0) return null;
   return candidates.reduce((best, current) =>

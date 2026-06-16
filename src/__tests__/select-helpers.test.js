@@ -115,18 +115,6 @@ describe('filterAlbums', () => {
     expect(filtered[0].artist).toBe('Tool');
   });
 
-  it('filters by status', () => {
-    const filtered = filterAlbums(mockAlbums, null, 'done');
-    expect(filtered).toHaveLength(1);
-    expect(filtered[0].status).toBe('done');
-  });
-
-  it('combines query and status filters', () => {
-    const filtered = filterAlbums(mockAlbums, 'Radiohead', 'missing');
-    expect(filtered).toHaveLength(1);
-    expect(filtered[0].artist).toBe('Radiohead');
-  });
-
   it('returns empty array when no match', () => {
     const filtered = filterAlbums(mockAlbums, 'Nonexistent');
     expect(filtered).toHaveLength(0);

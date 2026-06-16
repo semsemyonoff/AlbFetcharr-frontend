@@ -50,8 +50,10 @@ npm test             # Vitest (vitest --run)
 - `src/app.jsx` — корневой компонент с пошаговым flow.
 - `src/select-step.jsx`, `src/results-step.jsx`, `src/download-step.jsx` — три шага.
 - `src/*-helpers.js` — чистые помощники для каждого шага (покрыты тестами).
-- `src/i18n.js` — переводы (EN/RU).
-- `src/styles.css` — стили через CSS-переменные (light/dark/system).
+- `src/accent-helpers.js` — палитра акцента → CSS-переменные (выбор в панели Tweaks).
+- `src/i18n.js` — переводы (EN/RU) + `I18N_FNS`/`pluralRu` (интерполяция и склонения).
+- `src/styles.css` — стили через CSS-переменные (light/dark/system); адаптивная
+  вёрстка с брейк-поинтами 1024/640/380 (на ≤640 таблица шага 1 превращается в карточки).
 
 ## Конвенции
 
