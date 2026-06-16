@@ -72,6 +72,33 @@ describe('ResultsStep — album track-count', () => {
   });
 });
 
+describe('ResultsStep — i18n-resolved chrome', () => {
+  it('renders the search sub-header via the interpolation helper (EN)', () => {
+    const { container } = renderResults([makeItem(), makeItem({ id: '2' })]);
+    const sub = container.querySelector('.step-header .sub');
+    expect(sub.textContent).toBe('Searched 2 albums · 0 source errors');
+  });
+
+  it('renders the search sub-header via the interpolation helper (RU)', () => {
+    const { container } = renderResults(
+      [makeItem(), makeItem({ id: '2' })],
+      'ru'
+    );
+    const sub = container.querySelector('.step-header .sub');
+    expect(sub.textContent).toBe(
+      'Поиск завершён по 2 альбомам · 0 ошибок источников'
+    );
+  });
+
+  it('renders the localized Cancel button (EN + RU)', () => {
+    const en = renderResults([makeItem()], 'en');
+    expect(en.getByText(I18N.en.cancel)).toBeTruthy();
+    cleanup();
+    const ru = renderResults([makeItem()], 'ru');
+    expect(ru.getByText(I18N.ru.cancel)).toBeTruthy();
+  });
+});
+
 describe('ResultsStep — candidate cover fallback', () => {
   it("renders '?' when match_artists is empty, without crashing", () => {
     const candidate = {

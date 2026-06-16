@@ -131,12 +131,8 @@ const SelectStep = ({
         <div className="ico">
           <Icon name="music" size={28} />
         </div>
-        <h3>{lang === 'ru' ? 'Ничего не загружено' : 'Nothing loaded yet'}</h3>
-        <p>
-          {lang === 'ru'
-            ? 'Подключитесь к Lidarr, чтобы получить список wanted-альбомов.'
-            : 'Connect to Lidarr to load the list of wanted albums.'}
-        </p>
+        <h3>{t.empty_title}</h3>
+        <p>{t.empty_body}</p>
         <button className="btn btn-primary" onClick={onRefetch}>
           <Icon name="refresh" size={14} />
           {t.fetch_lidarr}
@@ -151,12 +147,8 @@ const SelectStep = ({
         <div className="ico">
           <Icon name="alert" size={28} />
         </div>
-        <h3>{lang === 'ru' ? 'Ошибка подключения' : 'Connection error'}</h3>
-        <p>
-          {lang === 'ru'
-            ? 'Не удалось подключиться к Lidarr. Проверьте конфигурацию.'
-            : 'Failed to connect to Lidarr. Check your configuration.'}
-        </p>
+        <h3>{t.conn_error_title}</h3>
+        <p>{t.conn_error_body}</p>
         <button className="btn btn-primary" onClick={onRefetch}>
           <Icon name="refresh" size={14} />
           {t.fetch_lidarr}

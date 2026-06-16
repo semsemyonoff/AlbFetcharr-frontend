@@ -1,6 +1,6 @@
 import React from 'react';
 import { Icon } from './icons.jsx';
-import { I18N } from './i18n.js';
+import { I18N, I18N_FNS } from './i18n.js';
 import SelectStep from './select-step.jsx';
 import { ResultsStep } from './results-step.jsx';
 import { DownloadStep } from './download-step.jsx';
@@ -95,10 +95,8 @@ const Header = ({
 };
 
 const Stepper = ({ step, lang }) => {
-  const labels =
-    lang === 'ru'
-      ? ['Выбор', 'Результаты', 'Загрузка']
-      : ['Select', 'Results', 'Download'];
+  const t = I18N[lang];
+  const labels = [t.step_select, t.step_results, t.step_download];
   const order = ['select', 'results', 'download'];
   const idx = order.indexOf(
     step === 'searching' ? 'results' : step === 'done' ? 'download' : step
@@ -249,7 +247,7 @@ export default function App() {
         const mapped = data.map((album) => mapBackendAlbum(album));
         setAlbums(mapped);
         setFetchState('ready');
-        setLastSync(lang === 'ru' ? 'только что' : 'just now');
+        setLastSync(I18N[lang].just_now);
       }
     } catch (err) {
       console.error('Failed to fetch wanted albums:', err);
@@ -475,11 +473,7 @@ export default function App() {
     }
 
     if (toDownload.length === 0) {
-      setToastMessage(
-        lang === 'ru'
-          ? 'Выберите альбомы для загрузки'
-          : 'Select albums to download'
-      );
+      setToastMessage(I18N[lang].select_to_download);
       return;
     }
 
@@ -491,11 +485,7 @@ export default function App() {
       });
 
       if (!claimRes.ok && claimRes.status === 409) {
-        setToastMessage(
-          lang === 'ru'
-            ? 'Загрузка уже открыта в другой вкладке — закройте её чтобы продолжить'
-            : 'Download is already being watched in another tab — close it to take over'
-        );
+        setToastMessage(I18N[lang].download_other_tab);
         return;
       }
 
@@ -554,10 +544,7 @@ export default function App() {
                 return {
                   ...d,
                   status: 'failed',
-                  message:
-                    lang === 'ru'
-                      ? 'Нет ответа от сервера'
-                      : 'No progress received',
+                  message: I18N[lang].no_progress_received,
                   progress: 100,
                 };
               })
@@ -572,11 +559,7 @@ export default function App() {
 
           if (!retried) {
             retried = true;
-            setToastMessage(
-              lang === 'ru'
-                ? 'Соединение потеряно — переподключение…'
-                : 'Connection lost — retrying…'
-            );
+            setToastMessage(I18N[lang].connection_retrying);
             // Claim immediately (not after a delay) to minimise the window
             // where the old server-side generator can pop and discard events
             // before the generation counter is incremented by the takeover.
@@ -588,11 +571,7 @@ export default function App() {
                   body: JSON.stringify({ reconnect: true }),
                 });
                 if (!claimRes.ok) {
-                  setToastMessage(
-                    lang === 'ru'
-                      ? 'Соединение потеряно'
-                      : 'Lost connection to backend'
-                  );
+                  setToastMessage(I18N[lang].connection_lost_backend);
                   return;
                 }
                 const newEs = new EventSource('/api/download/stream');
@@ -600,19 +579,11 @@ export default function App() {
                 attachSSEHandlers(newEs);
                 setToastMessage('');
               } catch {
-                setToastMessage(
-                  lang === 'ru'
-                    ? 'Соединение потеряно'
-                    : 'Lost connection to backend'
-                );
+                setToastMessage(I18N[lang].connection_lost_backend);
               }
             })();
           } else {
-            setToastMessage(
-              lang === 'ru'
-                ? 'Соединение потеряно'
-                : 'Lost connection to backend'
-            );
+            setToastMessage(I18N[lang].connection_lost_backend);
             setDownloads((prev) =>
               prev.map((d) =>
                 ['done', 'failed'].includes(d.status)
@@ -620,10 +591,7 @@ export default function App() {
                   : {
                       ...d,
                       status: 'failed',
-                      message:
-                        lang === 'ru'
-                          ? 'Соединение потеряно'
-                          : 'Connection lost',
+                      message: I18N[lang].connection_lost,
                     }
               )
             );
@@ -642,11 +610,7 @@ export default function App() {
       if (downloadRes.status === 409) {
         eventSource.close();
         setEventSourceRef(null);
-        setToastMessage(
-          lang === 'ru'
-            ? 'Загрузка уже запущена на сервере'
-            : 'A download is already running on the server'
-        );
+        setToastMessage(I18N[lang].download_running_server);
         setStep('results');
         return;
       }
@@ -664,9 +628,7 @@ export default function App() {
         eventSource.close();
         setEventSourceRef(null);
       }
-      setToastMessage(
-        lang === 'ru' ? `Ошибка: ${err.message}` : `Error: ${err.message}`
-      );
+      setToastMessage(`${I18N[lang].error_prefix}: ${err.message}`);
       setStep('results');
     }
   }, [searchItems, choices, lang, availableSources]);
@@ -743,11 +705,13 @@ export default function App() {
             <div className="ico">
               <div className="spinner lg"></div>
             </div>
-            <h3>{lang === 'ru' ? 'Идёт поиск…' : 'Searching…'}</h3>
+            <h3>{t.searching_title}</h3>
             <p>
-              {lang === 'ru'
-                ? `Опрашиваем ${Object.values(sources).filter(Boolean).length} источник(ов) по ${selected.size} альбому(ам).`
-                : `Querying ${Object.values(sources).filter(Boolean).length} source(s) for ${selected.size} album(s).`}
+              {I18N_FNS.searchingSubtitle(
+                lang,
+                Object.values(sources).filter(Boolean).length,
+                selected.size
+              )}
             </p>
           </div>
         )}

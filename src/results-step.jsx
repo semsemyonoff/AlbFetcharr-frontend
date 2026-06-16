@@ -1,5 +1,6 @@
 import React from 'react';
 import { Icon } from './icons';
+import { I18N_FNS } from './i18n.js';
 
 const DEFAULT_SOURCES = ['yandex', 'youtube_music', 'soundcloud'];
 
@@ -296,11 +297,7 @@ export const ResultsStep = ({
         <div>
           <h2>{t.pick_best_matches}</h2>
           <div className="sub">
-            {lang === 'ru'
-              ? `Поиск завершён по ${totalSearched} альбомам · ${errorsCount} ошибок источников`
-              : `Searched ${totalSearched} album${totalSearched !== 1 ? 's' : ''} · ${errorsCount} source error${
-                  errorsCount !== 1 ? 's' : ''
-                }`}
+            {I18N_FNS.resultsSubtitle(lang, totalSearched, errorsCount)}
           </div>
         </div>
       </div>
@@ -331,7 +328,7 @@ export const ResultsStep = ({
         </span>
         <div className="grow"></div>
         <button className="btn btn-ghost" onClick={onBack}>
-          {lang === 'ru' ? 'Отмена' : 'Cancel'}
+          {t.cancel}
         </button>
         <button
           className="btn btn-primary"

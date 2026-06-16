@@ -1,5 +1,6 @@
 import React from 'react';
 import { Icon } from './icons.jsx';
+import { I18N_FNS } from './i18n.js';
 
 export function DownloadStep({
   t,
@@ -21,12 +22,12 @@ export function DownloadStep({
 
   const statusLabel = (s) => {
     const map = {
-      starting: lang === 'ru' ? 'Начинается' : 'Starting',
-      downloading: lang === 'ru' ? 'Скачивается' : 'Downloading',
-      downloaded: lang === 'ru' ? 'Скачано' : 'Downloaded',
-      importing: lang === 'ru' ? 'Импорт в Lidarr' : 'Importing',
-      done: lang === 'ru' ? 'Готово' : 'Done',
-      failed: lang === 'ru' ? 'Ошибка' : 'Failed',
+      starting: t.status_starting,
+      downloading: t.status_downloading,
+      downloaded: t.status_downloaded,
+      importing: t.status_importing,
+      done: t.status_done,
+      failed: t.status_failed,
     };
     return map[s] || s;
   };
@@ -41,31 +42,29 @@ export function DownloadStep({
           <h2>
             {allDone
               ? anyFailed
-                ? lang === 'ru'
-                  ? 'Загрузка завершена с ошибками'
-                  : 'Finished with errors'
-                : lang === 'ru'
-                  ? 'Загрузка завершена'
-                  : 'All done'
-              : lang === 'ru'
-                ? 'Загрузка…'
-                : 'Downloading…'}
+                ? t.dl_finished_errors_title
+                : t.dl_all_done_title
+              : t.dl_downloading_title}
           </h2>
           <div className="sub">
             {allDone
-              ? lang === 'ru'
-                ? `${successCount} из ${downloads.length} успешно`
-                : `${successCount} of ${downloads.length} succeeded`
-              : lang === 'ru'
-                ? `${successCount}/${downloads.length} готово · не закрывайте страницу`
-                : `${successCount}/${downloads.length} done · keep this tab open`}
+              ? I18N_FNS.downloadDoneSubtitle(
+                  lang,
+                  successCount,
+                  downloads.length
+                )
+              : I18N_FNS.downloadProgressSubtitle(
+                  lang,
+                  successCount,
+                  downloads.length
+                )}
           </div>
         </div>
         <div className="actions">
           {allDone && (
             <button className="btn btn-primary" onClick={onStartOver}>
               <Icon name="refresh" size={13} />
-              {lang === 'ru' ? 'Начать заново' : 'Start over'}
+              {t.start_over}
             </button>
           )}
         </div>
@@ -158,28 +157,19 @@ export function DownloadStep({
           <div className="check-big">
             <Icon name={anyFailed ? 'alert' : 'check'} size={28} />
           </div>
-          <h3>
-            {anyFailed
-              ? lang === 'ru'
-                ? 'Часть загрузок не удалась'
-                : 'Some downloads failed'
-              : lang === 'ru'
-                ? 'Готово!'
-                : 'All set!'}
-          </h3>
+          <h3>{anyFailed ? t.done_some_failed : t.done_all_set}</h3>
           <div className="sub">
-            {lang === 'ru'
-              ? importEnabled
-                ? `${successCount} альбом(ов) импортирован${successCount === 1 ? '' : 'ы'} в Lidarr${failedCount > 0 ? `, ${failedCount} с ошибкой` : ''}.`
-                : `${successCount} альбом(ов) сохранён${successCount === 1 ? '' : 'ы'} в папку загрузок${failedCount > 0 ? `, ${failedCount} с ошибкой` : ''}.`
-              : importEnabled
-                ? `${successCount} album${successCount !== 1 ? 's' : ''} imported into Lidarr${failedCount > 0 ? `, ${failedCount} failed` : ''}.`
-                : `${successCount} album${successCount !== 1 ? 's' : ''} saved to downloads${failedCount > 0 ? `, ${failedCount} failed` : ''}.`}
+            {I18N_FNS.downloadDoneCardBody(
+              lang,
+              importEnabled,
+              successCount,
+              failedCount
+            )}
           </div>
           <div className="row-actions-center">
             <button className="btn btn-primary" onClick={onStartOver}>
               <Icon name="refresh" size={13} />
-              {lang === 'ru' ? 'Новая сессия' : 'New session'}
+              {t.new_session}
             </button>
           </div>
         </div>
