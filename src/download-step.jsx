@@ -109,6 +109,11 @@ export function DownloadStep({
               </div>
               <div className="right-stat">
                 <span className="status-mini">{statusLabel(statusCls)}</span>
+                {d.item_total > 1 && (
+                  <span className="batch-pos">
+                    {I18N_FNS.batchPosition(lang, d.item_index, d.item_total)}
+                  </span>
+                )}
               </div>
             </div>
           );

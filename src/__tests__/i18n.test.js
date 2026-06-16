@@ -136,6 +136,11 @@ describe('I18N_FNS — count-dependent interpolation', () => {
     );
   });
 
+  it('batchPosition renders "album N of M" honestly in both languages', () => {
+    expect(I18N_FNS.batchPosition('en', 2, 5)).toBe('album 2 of 5');
+    expect(I18N_FNS.batchPosition('ru', 1, 3)).toBe('альбом 1 из 3');
+  });
+
   it('downloadDoneCardBody agrees verb/noun and appends failures', () => {
     expect(I18N_FNS.downloadDoneCardBody('en', true, 1, 0)).toBe(
       '1 album imported into Lidarr.'

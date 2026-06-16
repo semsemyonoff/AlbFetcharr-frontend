@@ -1383,6 +1383,12 @@ html[data-theme='light'] .pg-btn.on {
   background: var(--danger-bg);
   color: var(--danger);
 }
+/* Batch position ("album N of M") — honest available data, not a track count. */
+.dl-row .batch-pos {
+  font-size: 11px;
+  color: var(--text-mute);
+  white-space: nowrap;
+}
 
 /* Source brand badge */
 .src-badge.yandex {

@@ -114,6 +114,34 @@ describe('DownloadStep — i18n-resolved headings + summaries', () => {
   });
 });
 
+describe('DownloadStep — batch position ("album N of M")', () => {
+  it('renders the batch position when there is more than one album (EN)', () => {
+    const { container } = renderDownload({
+      downloads: [makeDownload({ item_index: 2, item_total: 5 })],
+    });
+    expect(container.querySelector('.batch-pos').textContent).toBe(
+      'album 2 of 5'
+    );
+  });
+
+  it('renders the batch position in RU', () => {
+    const { container } = renderDownload({
+      lang: 'ru',
+      downloads: [makeDownload({ item_index: 1, item_total: 3 })],
+    });
+    expect(container.querySelector('.batch-pos').textContent).toBe(
+      'альбом 1 из 3'
+    );
+  });
+
+  it('hides the batch position for a single-album download', () => {
+    const { container } = renderDownload({
+      downloads: [makeDownload({ item_index: 1, item_total: 1 })],
+    });
+    expect(container.querySelector('.batch-pos')).toBeNull();
+  });
+});
+
 describe('DownloadStep — i18n-resolved done card', () => {
   it('renders the success done-card body (EN import)', () => {
     const { container, getByText } = renderDownload({

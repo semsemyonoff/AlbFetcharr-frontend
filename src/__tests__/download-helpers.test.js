@@ -123,6 +123,61 @@ describe('applyProgressUpdate', () => {
     expect(result).toEqual(downloads);
   });
 
+  it('carries batch position (item_index/item_total) through when present', () => {
+    const downloads = [{ album_id: 1, status: 'starting', progress: 0 }];
+    const event = {
+      album_id: 1,
+      status: 'downloading',
+      message: '',
+      item_index: 2,
+      item_total: 5,
+    };
+    const result = applyProgressUpdate(downloads, event);
+    expect(result[0].item_index).toBe(2);
+    expect(result[0].item_total).toBe(5);
+  });
+
+  it('preserves existing batch position when the event omits it', () => {
+    const downloads = [
+      {
+        album_id: 1,
+        status: 'starting',
+        progress: 0,
+        item_index: 3,
+        item_total: 7,
+      },
+    ];
+    const event = { album_id: 1, status: 'downloading', message: '' };
+    const result = applyProgressUpdate(downloads, event);
+    expect(result[0].item_index).toBe(3);
+    expect(result[0].item_total).toBe(7);
+  });
+
+  it('passes through speed/eta/numeric progress when the backend supplies them', () => {
+    const downloads = [{ album_id: 1, status: 'starting', progress: 0 }];
+    const event = {
+      album_id: 1,
+      status: 'downloading',
+      message: '',
+      speed: '1.2 MB/s',
+      eta: '00:42',
+      progress: 73,
+    };
+    const result = applyProgressUpdate(downloads, event);
+    expect(result[0].speed).toBe('1.2 MB/s');
+    expect(result[0].eta).toBe('00:42');
+    expect(result[0].progress).toBe(73);
+  });
+
+  it('falls back to the bucket map and leaks no undefined when fields are absent', () => {
+    const downloads = [{ album_id: 1, status: 'starting', progress: 0 }];
+    const event = { album_id: 1, status: 'downloading', message: '' };
+    const result = applyProgressUpdate(downloads, event);
+    expect(result[0].progress).toBe(50);
+    expect('speed' in result[0]).toBe(false);
+    expect('eta' in result[0]).toBe(false);
+  });
+
   it('returns new array (immutable)', () => {
     const downloads = [
       { album_id: 123, artist: 'Artist 1', status: 'starting', progress: 10 },

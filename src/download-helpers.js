@@ -17,17 +17,35 @@ export function parseSSEEvent(rawData) {
 }
 
 export function applyProgressUpdate(downloads, progressEvent) {
-  const { album_id, status, message } = progressEvent;
+  const { album_id, status, message, item_index, item_total, speed, eta } =
+    progressEvent;
   const next = [...downloads];
   const idx = next.findIndex((d) => d.album_id === album_id);
 
   if (idx !== -1) {
-    next[idx] = {
+    const updated = {
       ...next[idx],
       status,
       message: message || next[idx].message,
     };
-    next[idx].progress = getProgressPercent(status);
+
+    // Batch position ("album N of M") — honest, available data. Only overwrite
+    // when the event actually carries it so initial values survive.
+    if (item_index != null) updated.item_index = item_index;
+    if (item_total != null) updated.item_total = item_total;
+
+    // Backend-gated passthrough: the SSE stream does NOT currently emit speed,
+    // eta, or a continuous numeric progress (see Post-Completion). This keeps
+    // such fields alive if the backend contract ever supplies them; until then
+    // they stay undefined and the bar falls back to the per-status bucket map.
+    if (speed != null) updated.speed = speed;
+    if (eta != null) updated.eta = eta;
+    updated.progress =
+      typeof progressEvent.progress === 'number'
+        ? progressEvent.progress
+        : getProgressPercent(status);
+
+    next[idx] = updated;
   }
 
   return next;

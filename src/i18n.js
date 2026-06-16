@@ -307,6 +307,14 @@ export const I18N_FNS = {
       ? `${success}/${total} готово · не закрывайте страницу`
       : `${success}/${total} done · keep this tab open`,
 
+  // download-step.jsx — album's position in the download batch ("album N of M").
+  // NOTE: this is the BATCH position, not a track count — the backend does not
+  // supply per-track progress (see Post-Completion: download progress data).
+  batchPosition: (lang, index, total) =>
+    lang === 'ru'
+      ? `альбом ${index} из ${total}`
+      : `album ${index} of ${total}`,
+
   // download-step.jsx — done-card body.
   downloadDoneCardBody: (lang, importEnabled, success, failed) => {
     if (lang === 'ru') {
