@@ -293,6 +293,9 @@ export default function App() {
   }, []);
 
   React.useEffect(() => {
+    // Initial data load on mount. runFetch sets a synchronous loading state —
+    // that's the intended fetch trigger here, not a cascading re-render.
+    // eslint-disable-next-line react-hooks/set-state-in-effect
     runFetch();
     fetchSources();
   }, []);
@@ -303,10 +306,13 @@ export default function App() {
   const [sources, setSources] = React.useState({});
 
   React.useEffect(() => {
+    // One-time enable-all once the source list arrives from /api/sources. The
+    // user's later toggles survive because availableSources is then stable.
     const initialSources = {};
     availableSources.forEach((source) => {
       initialSources[source.id] = true;
     });
+    // eslint-disable-next-line react-hooks/set-state-in-effect
     setSources(initialSources);
   }, [availableSources]);
 

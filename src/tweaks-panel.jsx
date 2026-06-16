@@ -1,3 +1,8 @@
+/* eslint-disable react-hooks/refs --
+   This dev-only "tweaks" panel reads refs during render by design: the panel
+   position comes from a persisted drag-offset ref (the DOM is moved imperatively
+   mid-drag), and TweakRadio keeps a latest-value ref in sync for its drag
+   handler. Both are intentional and can't be disabled per-line on JSX attributes. */
 import React from 'react';
 
 const __TWEAKS_STYLE = `
