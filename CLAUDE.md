@@ -17,9 +17,9 @@ serve it, but the SPA has no knowledge of how or where it is deployed.
 
 ## Tech stack
 
-- **Framework**: React 18 — function components + hooks only (`useState` /
+- **Framework**: React 19 — function components + hooks only (`useState` /
   `useReducer` / `useRef`; no state-management library).
-- **Build tool**: Vite 5 with `@vitejs/plugin-react`.
+- **Build tool**: Vite 8 with `@vitejs/plugin-react`.
 - **Language**: plain JavaScript + JSX (no TypeScript).
 - **Routing**: none — a single page with an in-component step state machine.
 - **Lint/format**: ESLint (flat config) + Prettier.
@@ -27,7 +27,7 @@ serve it, but the SPA has no knowledge of how or where it is deployed.
 
 ## Requirements
 
-- Node.js 20+
+- Node.js 20.19+ (Vite 8 / ESLint require `^20.19.0 || >=22.12.0`)
 
 ## Commands
 

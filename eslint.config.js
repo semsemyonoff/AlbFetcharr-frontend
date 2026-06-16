@@ -18,7 +18,7 @@ export default [
         sourceType: 'module',
       },
     },
-    settings: { react: { version: '18.3' } },
+    settings: { react: { version: 'detect' } },
     plugins: {
       react,
       'react-hooks': reactHooks,
@@ -28,7 +28,13 @@ export default [
       ...js.configs.recommended.rules,
       ...react.configs.recommended.rules,
       ...react.configs['jsx-runtime'].rules,
-      ...reactHooks.configs.recommended.rules,
+      // eslint-plugin-react-hooks v7's `recommended` config bundles the new
+      // React Compiler rule set (react-hooks/refs, set-state-in-effect, purity,
+      // static-components, …). Those flag patterns in existing components, so for
+      // this dependency bump we keep enforcing only the two classic hook rules.
+      // The compiler rules are adopted in the next commit.
+      'react-hooks/rules-of-hooks': 'error',
+      'react-hooks/exhaustive-deps': 'warn',
       'react-refresh/only-export-components': [
         'warn',
         { allowConstantExport: true },
