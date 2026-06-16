@@ -63,7 +63,8 @@ production `base`, and the Vitest block.
 
 ```
 .
-├── index.html              # Vite entry HTML; loads src/main.jsx into #root
+├── index.html              # Vite entry HTML; loads src/main.jsx into #root; favicon links
+├── public/                 # copied verbatim to dist/ root (favicons: favicon.svg, favicon-32/128.png, apple-touch-icon.png — sourced from the backend logo set)
 ├── vite.config.js          # dev proxy, prod base (/static/dist/), Vitest config
 ├── eslint.config.js        # ESLint flat config (React + hooks + refresh + Vitest globals)
 ├── .prettierrc.json        # Prettier config
