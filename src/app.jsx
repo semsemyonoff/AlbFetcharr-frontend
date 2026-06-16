@@ -6,7 +6,18 @@ import { ResultsStep } from './results-step.jsx';
 import { DownloadStep } from './download-step.jsx';
 import { scoreCandidate, getBestCandidate } from './results-helpers.js';
 import { parseSSEEvent, applyProgressUpdate } from './download-helpers.js';
-import { TweaksPanel, TweakSection, TweakRadio } from './tweaks-panel.jsx';
+import {
+  TweaksPanel,
+  TweakSection,
+  TweakRadio,
+  TweakColor,
+} from './tweaks-panel.jsx';
+import {
+  ACCENT_PALETTES,
+  DEFAULT_ACCENT,
+  applyAccent,
+  parseAccent,
+} from './accent-helpers.js';
 
 function nowHHMMSS() {
   const d = new Date();
@@ -158,6 +169,7 @@ export default function App() {
   const [defaultConfig, setDefaultConfig] = React.useState(null);
   const [lang, setLang] = React.useState('en');
   const [theme, setTheme] = React.useState('system');
+  const [accent, setAccent] = React.useState(DEFAULT_ACCENT);
   const mqlCleanupRef = React.useRef(null);
 
   React.useEffect(() => {
@@ -170,9 +182,14 @@ export default function App() {
 
           const storedLang = localStorage.getItem('albfetcharr.lang');
           const storedTheme = localStorage.getItem('albfetcharr.theme');
+          const storedAccent = localStorage.getItem('albfetcharr.accent');
 
           setLang(storedLang || config.default_lang || 'en');
           setTheme(storedTheme || config.default_theme || 'system');
+
+          const resolvedAccent = parseAccent(storedAccent);
+          setAccent(resolvedAccent);
+          applyAccent(resolvedAccent);
         }
       } catch (err) {
         console.error('Failed to fetch config:', err);
@@ -220,6 +237,12 @@ export default function App() {
   const handleSetTheme = (newTheme) => {
     setTheme(newTheme);
     localStorage.setItem('albfetcharr.theme', newTheme);
+  };
+
+  const handleSetAccent = (newAccent) => {
+    setAccent(newAccent);
+    applyAccent(newAccent);
+    localStorage.setItem('albfetcharr.accent', JSON.stringify(newAccent));
   };
 
   const t = I18N[lang];
@@ -774,6 +797,13 @@ export default function App() {
           value={lang}
           options={['en', 'ru']}
           onChange={handleSetLang}
+        />
+        <TweakSection label={t.accent} />
+        <TweakColor
+          label={t.gradient}
+          value={accent}
+          options={ACCENT_PALETTES}
+          onChange={handleSetAccent}
         />
       </TweaksPanel>
     </>
