@@ -110,7 +110,10 @@ function AlbumCard({
         <div className="meta">
           <div className="artist">{a.artist}</div>
           <div className="album">{a.album}</div>
-          <div className="yt">{a.year}</div>
+          <div className="yt">
+            {a.year}
+            {a.tracks > 0 && ` · ${a.tracks} ${t.track_count}`}
+          </div>
         </div>
         <div className="right">
           {pillNode}
