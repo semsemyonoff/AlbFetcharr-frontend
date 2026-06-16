@@ -1,9 +1,9 @@
-import { defineConfig } from 'vite'
-import react from '@vitejs/plugin-react'
+import { defineConfig } from 'vite';
+import react from '@vitejs/plugin-react';
 
 // Flask backend origin the dev server proxies /api and /static to.
 // Override with BACKEND_URL when the backend runs elsewhere.
-const BACKEND = process.env.BACKEND_URL || 'http://localhost:5000'
+const BACKEND = process.env.BACKEND_URL || 'http://localhost:5000';
 
 export default defineConfig(({ command }) => ({
   plugins: [react()],
@@ -25,5 +25,6 @@ export default defineConfig(({ command }) => ({
   test: {
     environment: 'jsdom',
     globals: true,
+    setupFiles: ['./test/setup.js'],
   },
-}))
+}));

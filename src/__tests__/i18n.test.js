@@ -10,11 +10,11 @@ describe('i18n', () => {
   });
 
   it('should have all values as strings', () => {
-    Object.entries(I18N.en).forEach(([key, value]) => {
+    Object.entries(I18N.en).forEach(([, value]) => {
       expect(typeof value).toBe('string');
     });
 
-    Object.entries(I18N.ru).forEach(([key, value]) => {
+    Object.entries(I18N.ru).forEach(([, value]) => {
       expect(typeof value).toBe('string');
     });
   });

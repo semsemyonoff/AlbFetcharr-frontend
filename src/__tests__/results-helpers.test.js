@@ -1,11 +1,18 @@
 import { describe, it, expect } from 'vitest';
-import { scoreCandidate, groupBySource, getBestCandidate } from '../results-helpers';
+import {
+  scoreCandidate,
+  groupBySource,
+  getBestCandidate,
+} from '../results-helpers';
 
 describe('results-helpers', () => {
   describe('scoreCandidate', () => {
     it('returns high score for exact match', () => {
       const album = { artist: 'The Beatles', album: 'Abbey Road' };
-      const candidate = { match_artists: ['The Beatles'], match_title: 'Abbey Road' };
+      const candidate = {
+        match_artists: ['The Beatles'],
+        match_title: 'Abbey Road',
+      };
       const score = scoreCandidate(album, candidate);
       expect(score).toBeGreaterThan(0.9);
     });
@@ -20,21 +27,30 @@ describe('results-helpers', () => {
 
     it('returns low score for unrelated candidate', () => {
       const album = { artist: 'Pink Floyd', album: 'The Wall' };
-      const candidate = { match_artists: ['The Beatles'], match_title: 'Abbey Road' };
+      const candidate = {
+        match_artists: ['The Beatles'],
+        match_title: 'Abbey Road',
+      };
       const score = scoreCandidate(album, candidate);
       expect(score).toBeLessThan(0.5);
     });
 
     it('handles case-insensitive matching', () => {
       const album = { artist: 'the beatles', album: 'abbey road' };
-      const candidate = { match_artists: ['THE BEATLES'], match_title: 'ABBEY ROAD' };
+      const candidate = {
+        match_artists: ['THE BEATLES'],
+        match_title: 'ABBEY ROAD',
+      };
       const score = scoreCandidate(album, candidate);
       expect(score).toBeGreaterThan(0.9);
     });
 
     it('handles multiple artists', () => {
       const album = { artist: 'Collaboration', album: 'Album' };
-      const candidate = { match_artists: ['Artist1', 'Artist2'], match_title: 'Album' };
+      const candidate = {
+        match_artists: ['Artist1', 'Artist2'],
+        match_title: 'Album',
+      };
       const score = scoreCandidate(album, candidate);
       expect(score).toBeGreaterThan(0);
     });

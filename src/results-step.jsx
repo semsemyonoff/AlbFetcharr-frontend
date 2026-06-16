@@ -6,9 +6,9 @@ const DEFAULT_SOURCES = ['yandex', 'youtube_music', 'soundcloud'];
 function getFormatLabel(t, source, format) {
   if (source === 'yandex') {
     const formatMap = {
-      '0': t.format_lossy_low,
-      '1': t.format_lossy_high,
-      '2': t.format_flac,
+      0: t.format_lossy_low,
+      1: t.format_lossy_high,
+      2: t.format_flac,
     };
     return formatMap[format] || format;
   }
@@ -26,7 +26,15 @@ function getFormatOptions(t, source) {
   return [{ value: null, label: t.format_default_ytdlp }];
 }
 
-function AlbumCard({ item, choices, t, setChosen, setSkip, setActive, sources }) {
+function AlbumCard({
+  item,
+  choices,
+  t,
+  setChosen,
+  setSkip,
+  setActive,
+  sources,
+}) {
   const a = item.album;
   const choice = choices[a.id];
   const isSkipped = choice === 'skip';
@@ -40,7 +48,7 @@ function AlbumCard({ item, choices, t, setChosen, setSkip, setActive, sources })
     return sources[0] ?? DEFAULT_SOURCES[0];
   });
 
-  const tabs = sources.map(s => {
+  const tabs = sources.map((s) => {
     const r = item.results[s];
     return {
       key: s,
@@ -58,10 +66,10 @@ function AlbumCard({ item, choices, t, setChosen, setSkip, setActive, sources })
   if (isSkipped) {
     pillNode = <span className="chosen-pill skip">{t.skipped}</span>;
   } else if (chosenId) {
-    const allCands = sources.flatMap(s =>
+    const allCands = sources.flatMap((s) =>
       Array.isArray(item.results[s]) ? item.results[s] : []
     );
-    const chosen = allCands.find(c => c.id === chosenId);
+    const chosen = allCands.find((c) => c.id === chosenId);
     if (chosen) {
       const matchPct = Math.round(chosen.match * 100);
       const cls = matchPct < 70 ? 'warn' : '';
@@ -73,13 +81,19 @@ function AlbumCard({ item, choices, t, setChosen, setSkip, setActive, sources })
     }
   } else {
     const hasAny = sources.some(
-      s => Array.isArray(item.results[s]) && item.results[s].length > 0
+      (s) => Array.isArray(item.results[s]) && item.results[s].length > 0
     );
     if (!hasAny) {
       pillNode = <span className="chosen-pill err">{t.no_matches}</span>;
     } else {
       pillNode = (
-        <span className="chosen-pill warn" style={{ background: 'var(--surface-hover)', color: 'var(--text-mute)' }}>
+        <span
+          className="chosen-pill warn"
+          style={{
+            background: 'var(--surface-hover)',
+            color: 'var(--text-mute)',
+          }}
+        >
           {t.pick_one}
         </span>
       );
@@ -96,9 +110,7 @@ function AlbumCard({ item, choices, t, setChosen, setSkip, setActive, sources })
         <div className="meta">
           <div className="artist">{a.artist}</div>
           <div className="album">{a.album}</div>
-          <div className="yt">
-            {a.year}
-          </div>
+          <div className="yt">{a.year}</div>
         </div>
         <div className="right">
           {pillNode}
@@ -116,7 +128,7 @@ function AlbumCard({ item, choices, t, setChosen, setSkip, setActive, sources })
       {!isSkipped && (
         <div className="ra-body">
           <div className="ra-tabs">
-            {tabs.map(tb => (
+            {tabs.map((tb) => (
               <button
                 key={tb.key}
                 className={`src-tab ${tab === tb.key ? 'on' : ''} ${tb.err ? 'err' : ''}`}
@@ -144,16 +156,21 @@ function AlbumCard({ item, choices, t, setChosen, setSkip, setActive, sources })
           )}
 
           {!isErr &&
-            candidates.map(c => {
+            candidates.map((c) => {
               const isChosen = chosenId === c.id;
               const matchPct = Math.round(c.match * 100);
               const defaultFormat = c.source === 'yandex' ? '2' : null;
-              const fmt = isChosen ? (choice.format || defaultFormat) : defaultFormat;
+              const fmt = isChosen
+                ? choice.format || defaultFormat
+                : defaultFormat;
               const formatOptions = getFormatOptions(t, c.source);
               const showFormatSelect = formatOptions.length > 1;
 
               return (
-                <label key={c.id} className={`cand-radio ${isChosen ? 'chosen' : ''}`}>
+                <label
+                  key={c.id}
+                  className={`cand-radio ${isChosen ? 'chosen' : ''}`}
+                >
                   <input
                     type="radio"
                     className="rd"
@@ -180,31 +197,39 @@ function AlbumCard({ item, choices, t, setChosen, setSkip, setActive, sources })
                         href={c.match_url}
                         target="_blank"
                         rel="noreferrer"
-                        onClick={e => e.stopPropagation()}
+                        onClick={(e) => e.stopPropagation()}
                       >
                         {c.match_url}
                       </a>
                     </div>
                   </div>
-                  <div className={`match ${matchPct < 70 ? 'low' : ''}`}>{matchPct}%</div>
+                  <div className={`match ${matchPct < 70 ? 'low' : ''}`}>
+                    {matchPct}%
+                  </div>
                   {showFormatSelect ? (
                     <select
                       className="fmt-select"
                       value={fmt || ''}
-                      onClick={e => e.stopPropagation()}
-                      onChange={e => {
+                      onClick={(e) => e.stopPropagation()}
+                      onChange={(e) => {
                         e.stopPropagation();
                         setChosen(a.id, c, e.target.value || null);
                       }}
                     >
-                      {formatOptions.map(f => (
-                        <option key={f.value || 'default'} value={f.value || ''}>
+                      {formatOptions.map((f) => (
+                        <option
+                          key={f.value || 'default'}
+                          value={f.value || ''}
+                        >
                           {f.label}
                         </option>
                       ))}
                     </select>
                   ) : (
-                    <div className="fmt-select" style={{ padding: '6px 8px', fontSize: '12px' }}>
+                    <div
+                      className="fmt-select"
+                      style={{ padding: '6px 8px', fontSize: '12px' }}
+                    >
                       {getFormatLabel(t, c.source, fmt)}
                     </div>
                   )}
@@ -217,9 +242,22 @@ function AlbumCard({ item, choices, t, setChosen, setSkip, setActive, sources })
   );
 }
 
-export const ResultsStep = ({ t, lang, items, choices, setChoice, onBack, onDownload, sources = DEFAULT_SOURCES }) => {
+export const ResultsStep = ({
+  t,
+  lang,
+  items,
+  choices,
+  setChoice,
+  onBack,
+  onDownload,
+  sources = DEFAULT_SOURCES,
+}) => {
   const setChosen = (albumId, candidate, format) => {
-    setChoice(albumId, { candidateId: candidate.id, format, source: candidate.source });
+    setChoice(albumId, {
+      candidateId: candidate.id,
+      format,
+      source: candidate.source,
+    });
   };
 
   const setSkip = (albumId) => {
@@ -231,7 +269,7 @@ export const ResultsStep = ({ t, lang, items, choices, setChoice, onBack, onDown
     else setChoice(albumId, undefined);
   };
 
-  const downloadable = items.filter(it => {
+  const downloadable = items.filter((it) => {
     const c = choices[it.album.id];
     return c && c !== 'skip';
   });
@@ -265,7 +303,7 @@ export const ResultsStep = ({ t, lang, items, choices, setChoice, onBack, onDown
       </div>
 
       <div className="result-list">
-        {items.map(item => (
+        {items.map((item) => (
           <AlbumCard
             key={item.album.id}
             item={item}
@@ -292,7 +330,11 @@ export const ResultsStep = ({ t, lang, items, choices, setChoice, onBack, onDown
         <button className="btn btn-ghost" onClick={onBack}>
           {lang === 'ru' ? 'Отмена' : 'Cancel'}
         </button>
-        <button className="btn btn-primary" disabled={downloadable.length === 0} onClick={onDownload}>
+        <button
+          className="btn btn-primary"
+          disabled={downloadable.length === 0}
+          onClick={onDownload}
+        >
           <Icon name="download" size={14} />
           {t.download_selected}
           {downloadable.length > 0 && (

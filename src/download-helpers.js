@@ -1,23 +1,23 @@
 export function parseSSEEvent(rawData) {
   try {
     const parsed = JSON.parse(rawData);
-    if ("log" in parsed) {
-      return { type: "log", text: parsed.log };
+    if ('log' in parsed) {
+      return { type: 'log', text: parsed.log };
     }
     if (parsed.progress) {
-      return { type: "progress", payload: parsed.progress };
+      return { type: 'progress', payload: parsed.progress };
     }
     if (parsed.done) {
-      return { type: "done" };
+      return { type: 'done' };
     }
   } catch (e) {
-    console.error("Failed to parse SSE event:", e);
+    console.error('Failed to parse SSE event:', e);
   }
   return null;
 }
 
 export function applyProgressUpdate(downloads, progressEvent) {
-  const { album_id, item_index, item_total, status, message } = progressEvent;
+  const { album_id, status, message } = progressEvent;
   const next = [...downloads];
   const idx = next.findIndex((d) => d.album_id === album_id);
 

@@ -1,26 +1,26 @@
 // Sorting, filtering, and pagination helpers for the select step
 
-export function sortAlbums(albums, key, direction = "asc") {
+export function sortAlbums(albums, key, direction = 'asc') {
   const list = [...albums];
-  const dir = direction === "asc" ? 1 : -1;
+  const dir = direction === 'asc' ? 1 : -1;
 
   list.sort((a, b) => {
     let av, bv;
 
     switch (key) {
-      case "artist":
+      case 'artist':
         av = a.artist;
         bv = b.artist;
         break;
-      case "album":
+      case 'album':
         av = a.album;
         bv = b.album;
         break;
-      case "year":
+      case 'year':
         av = a.year;
         bv = b.year;
         break;
-      case "added":
+      case 'added':
         av = -a.addedDaysAgo;
         bv = -b.addedDaysAgo;
         break;

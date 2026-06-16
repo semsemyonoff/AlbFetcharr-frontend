@@ -29,7 +29,7 @@ describe('theme-resolver', () => {
         this.data = {};
       },
     };
-    global.localStorage = localStorageMock;
+    globalThis.localStorage = localStorageMock;
 
     mediaQueryList = {
       matches: false,
@@ -91,14 +91,16 @@ describe('theme-resolver', () => {
   });
 
   it('respects all three theme options: system, light, dark', () => {
-    expect(['system', 'light', 'dark'].every(t =>
-      ['light', 'dark'].includes(resolveTheme(t))
-    )).toBe(true);
+    expect(
+      ['system', 'light', 'dark'].every((t) =>
+        ['light', 'dark'].includes(resolveTheme(t))
+      )
+    ).toBe(true);
   });
 
   it('supports language codes en and ru', () => {
     const langs = ['en', 'ru'];
-    langs.forEach(lang => {
+    langs.forEach((lang) => {
       localStorage.setItem('albfetcharr.lang', lang);
       expect(localStorage.getItem('albfetcharr.lang')).toBe(lang);
     });

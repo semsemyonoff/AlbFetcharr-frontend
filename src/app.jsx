@@ -1,16 +1,16 @@
-import React from "react";
-import { Icon } from "./icons.jsx";
-import { I18N, AGO_FNS } from "./i18n.js";
-import SelectStep from "./select-step.jsx";
-import { ResultsStep } from "./results-step.jsx";
-import { DownloadStep } from "./download-step.jsx";
-import { scoreCandidate, getBestCandidate } from "./results-helpers.js";
-import { parseSSEEvent, applyProgressUpdate } from "./download-helpers.js";
-import { TweaksPanel, TweakSection, TweakRadio, useTweaks } from "./tweaks-panel.jsx";
+import React from 'react';
+import { Icon } from './icons.jsx';
+import { I18N } from './i18n.js';
+import SelectStep from './select-step.jsx';
+import { ResultsStep } from './results-step.jsx';
+import { DownloadStep } from './download-step.jsx';
+import { scoreCandidate, getBestCandidate } from './results-helpers.js';
+import { parseSSEEvent, applyProgressUpdate } from './download-helpers.js';
+import { TweaksPanel, TweakSection, TweakRadio } from './tweaks-panel.jsx';
 
 function nowHHMMSS() {
   const d = new Date();
-  const pad = (n) => String(n).padStart(2, "0");
+  const pad = (n) => String(n).padStart(2, '0');
   return `${pad(d.getHours())}:${pad(d.getMinutes())}:${pad(d.getSeconds())}`;
 }
 const tstamp = (txt) => `[${nowHHMMSS()}] ${txt}`;
@@ -25,9 +25,9 @@ const Header = ({
   lastSync,
 }) => {
   const cycleTheme = () => {
-    if (theme === "system") setTheme("light");
-    else if (theme === "light") setTheme("dark");
-    else setTheme("system");
+    if (theme === 'system') setTheme('light');
+    else if (theme === 'light') setTheme('dark');
+    else setTheme('system');
   };
 
   return (
@@ -43,12 +43,12 @@ const Header = ({
         </div>
       </div>
       <div className="appbar-spacer"></div>
-      <div className={`app-status ${lidarrStatus === "err" ? "err" : ""}`}>
+      <div className={`app-status ${lidarrStatus === 'err' ? 'err' : ''}`}>
         <span className="dot"></span>
         <span>
-          {lidarrStatus === "ok"
+          {lidarrStatus === 'ok'
             ? t.lidarr_connected
-            : lidarrStatus === "syncing"
+            : lidarrStatus === 'syncing'
               ? t.lidarr_syncing
               : t.lidarr_error}
         </span>
@@ -60,10 +60,16 @@ const Header = ({
         )}
       </div>
       <div className="lang-toggle" role="group" aria-label="Language">
-        <button className={lang === "en" ? "on" : ""} onClick={() => setLang("en")}>
+        <button
+          className={lang === 'en' ? 'on' : ''}
+          onClick={() => setLang('en')}
+        >
           EN
         </button>
-        <button className={lang === "ru" ? "on" : ""} onClick={() => setLang("ru")}>
+        <button
+          className={lang === 'ru' ? 'on' : ''}
+          onClick={() => setLang('ru')}
+        >
           RU
         </button>
       </div>
@@ -74,7 +80,13 @@ const Header = ({
         title={t.theme}
       >
         <Icon
-          name={theme === "dark" || (theme === "system" && window.matchMedia("(prefers-color-scheme: dark)").matches) ? "sun" : "moon"}
+          name={
+            theme === 'dark' ||
+            (theme === 'system' &&
+              window.matchMedia('(prefers-color-scheme: dark)').matches)
+              ? 'sun'
+              : 'moon'
+          }
           size={18}
         />
       </button>
@@ -84,26 +96,21 @@ const Header = ({
 
 const Stepper = ({ step, lang }) => {
   const labels =
-    lang === "ru"
-      ? ["Выбор", "Результаты", "Загрузка"]
-      : ["Select", "Results", "Download"];
-  const order = ["select", "results", "download"];
-  const idx =
-    order.indexOf(
-      step === "searching"
-        ? "results"
-        : step === "done"
-          ? "download"
-          : step
-    );
+    lang === 'ru'
+      ? ['Выбор', 'Результаты', 'Загрузка']
+      : ['Select', 'Results', 'Download'];
+  const order = ['select', 'results', 'download'];
+  const idx = order.indexOf(
+    step === 'searching' ? 'results' : step === 'done' ? 'download' : step
+  );
   return (
     <div className="stepper">
       {labels.map((label, i) => (
         <React.Fragment key={i}>
           <div
-            className={`stepper-item ${i < idx ? "done" : ""} ${i === idx ? "current" : ""}`}
+            className={`stepper-item ${i < idx ? 'done' : ''} ${i === idx ? 'current' : ''}`}
           >
-            <span className="num">{i < idx ? "✓" : i + 1}</span>
+            <span className="num">{i < idx ? '✓' : i + 1}</span>
             <span>{label}</span>
           </div>
           {i < labels.length - 1 && (
@@ -115,28 +122,31 @@ const Stepper = ({ step, lang }) => {
   );
 };
 
-function mapBackendAlbum(album, index) {
+function mapBackendAlbum(album) {
   const year = album.release_date
-    ? parseInt(album.release_date.split("-")[0])
+    ? parseInt(album.release_date.split('-')[0])
     : new Date().getFullYear();
   return {
     id: String(album.album_id),
-    artist: album.artist || "Unknown Artist",
-    album: album.title || "Unknown Album",
+    artist: album.artist || 'Unknown Artist',
+    album: album.title || 'Unknown Album',
     year,
     tracks: 0,
     addedDaysAgo: album.added
-      ? Math.max(0, Math.floor((Date.now() - new Date(album.added).getTime()) / 86400000))
+      ? Math.max(
+          0,
+          Math.floor((Date.now() - new Date(album.added).getTime()) / 86400000)
+        )
       : 0,
-    status: album.status || "missing",
+    status: album.status || 'missing',
     root_folder: album.root_folder,
   };
 }
 
 function resolveTheme(theme) {
-  if (theme === "system") {
-    const darkMode = window.matchMedia("(prefers-color-scheme: dark)").matches;
-    return darkMode ? "dark" : "light";
+  if (theme === 'system') {
+    const darkMode = window.matchMedia('(prefers-color-scheme: dark)').matches;
+    return darkMode ? 'dark' : 'light';
   }
   return theme;
 }
@@ -148,26 +158,26 @@ function applyTheme(theme) {
 
 export default function App() {
   const [defaultConfig, setDefaultConfig] = React.useState(null);
-  const [lang, setLang] = React.useState("en");
-  const [theme, setTheme] = React.useState("system");
+  const [lang, setLang] = React.useState('en');
+  const [theme, setTheme] = React.useState('system');
   const mqlCleanupRef = React.useRef(null);
 
   React.useEffect(() => {
     const fetchConfig = async () => {
       try {
-        const response = await fetch("/api/config");
+        const response = await fetch('/api/config');
         if (response.ok) {
           const config = await response.json();
           setDefaultConfig(config);
 
-          const storedLang = localStorage.getItem("albfetcharr.lang");
-          const storedTheme = localStorage.getItem("albfetcharr.theme");
+          const storedLang = localStorage.getItem('albfetcharr.lang');
+          const storedTheme = localStorage.getItem('albfetcharr.theme');
 
-          setLang(storedLang || config.default_lang || "en");
-          setTheme(storedTheme || config.default_theme || "system");
+          setLang(storedLang || config.default_lang || 'en');
+          setTheme(storedTheme || config.default_theme || 'system');
         }
       } catch (err) {
-        console.error("Failed to fetch config:", err);
+        console.error('Failed to fetch config:', err);
       }
     };
 
@@ -182,13 +192,14 @@ export default function App() {
 
     applyTheme(theme);
 
-    if (theme === "system") {
-      const mql = window.matchMedia("(prefers-color-scheme: dark)");
-      const handleChange = () => applyTheme("system");
+    if (theme === 'system') {
+      const mql = window.matchMedia('(prefers-color-scheme: dark)');
+      const handleChange = () => applyTheme('system');
 
       if (mql.addEventListener) {
-        mql.addEventListener("change", handleChange);
-        mqlCleanupRef.current = () => mql.removeEventListener("change", handleChange);
+        mql.addEventListener('change', handleChange);
+        mqlCleanupRef.current = () =>
+          mql.removeEventListener('change', handleChange);
       } else if (mql.addListener) {
         mql.addListener(handleChange);
         mqlCleanupRef.current = () => mql.removeListener(handleChange);
@@ -205,52 +216,50 @@ export default function App() {
 
   const handleSetLang = (newLang) => {
     setLang(newLang);
-    localStorage.setItem("albfetcharr.lang", newLang);
+    localStorage.setItem('albfetcharr.lang', newLang);
   };
 
   const handleSetTheme = (newTheme) => {
     setTheme(newTheme);
-    localStorage.setItem("albfetcharr.theme", newTheme);
+    localStorage.setItem('albfetcharr.theme', newTheme);
   };
 
   const t = I18N[lang];
 
   // Lidarr fetch state
-  const [fetchState, setFetchState] = React.useState("loading");
+  const [fetchState, setFetchState] = React.useState('loading');
   const [albums, setAlbums] = React.useState([]);
-  const [lastSync, setLastSync] = React.useState("");
+  const [lastSync, setLastSync] = React.useState('');
   const [availableSources, setAvailableSources] = React.useState([]);
 
   const runFetch = React.useCallback(async () => {
-    setFetchState("loading");
+    setFetchState('loading');
     try {
-      const response = await fetch("/api/wanted");
+      const response = await fetch('/api/wanted');
       if (!response.ok) {
-        setFetchState("error");
+        setFetchState('error');
         return;
       }
       const data = await response.json();
 
       if (!Array.isArray(data) || data.length === 0) {
-        setFetchState("empty");
+        setFetchState('empty');
         setAlbums([]);
       } else {
-        const mapped = data.map((album, idx) =>
-          mapBackendAlbum(album, idx)
-        );
+        const mapped = data.map((album) => mapBackendAlbum(album));
         setAlbums(mapped);
-        setFetchState("ready");
-        setLastSync(lang === "ru" ? "только что" : "just now");
+        setFetchState('ready');
+        setLastSync(lang === 'ru' ? 'только что' : 'just now');
       }
     } catch (err) {
-      console.error("Failed to fetch wanted albums:", err);
-      setFetchState("error");
+      console.error('Failed to fetch wanted albums:', err);
+      setFetchState('error');
     }
   }, [lang]);
 
   const fetchSources = React.useCallback(async () => {
     try {
-      const response = await fetch("/api/sources");
+      const response = await fetch('/api/sources');
       if (response.ok) {
         const data = await response.json();
         if (Array.isArray(data)) {
@@ -258,7 +267,7 @@ export default function App() {
         }
       }
     } catch (err) {
-      console.error("Failed to fetch sources:", err);
+      console.error('Failed to fetch sources:', err);
     }
   }, []);
 
@@ -268,7 +277,7 @@ export default function App() {
   }, []);
 
   // Step state
-  const [step, setStep] = React.useState("select");
+  const [step, setStep] = React.useState('select');
   const [selected, setSelected] = React.useState(new Set());
   const [sources, setSources] = React.useState({});
 
@@ -288,8 +297,8 @@ export default function App() {
 
   const pushLog = (entries) => {
     const stamped = entries.map((e) => ({
-      type: e.type || "info",
-      text: e.text.startsWith("[") ? e.text : tstamp(e.text),
+      type: e.type || 'info',
+      text: e.text.startsWith('[') ? e.text : tstamp(e.text),
     }));
     setLogLines((prev) => [...prev, ...stamped]);
   };
@@ -298,15 +307,17 @@ export default function App() {
     const selectedAlbums = albums.filter((a) => selected.has(a.id));
     if (selectedAlbums.length === 0) return;
 
-    setStep("searching");
+    setStep('searching');
     pushLog([
       {
-        type: "dim",
+        type: 'dim',
         text: tstamp(
-          `Searching ${selectedAlbums.length} album(s) in ${Object.entries(sources)
+          `Searching ${selectedAlbums.length} album(s) in ${Object.entries(
+            sources
+          )
             .filter(([, v]) => v)
             .map(([k]) => availableSources.find((s) => s.id === k)?.name || k)
-            .join(", ")}…`
+            .join(', ')}…`
         ),
       },
     ]);
@@ -324,9 +335,9 @@ export default function App() {
           .map(([k]) => k),
       };
 
-      const response = await fetch("/api/search", {
-        method: "POST",
-        headers: { "Content-Type": "application/json" },
+      const response = await fetch('/api/search', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
         body: JSON.stringify(payload),
       });
 
@@ -337,7 +348,9 @@ export default function App() {
       const results = await response.json();
 
       const items = results.map((result) => {
-        const album = selectedAlbums.find((a) => a.id === String(result.album_id));
+        const album = selectedAlbums.find(
+          (a) => a.id === String(result.album_id)
+        );
         const albumObj = album || {
           artist: result.artist,
           album: result.title,
@@ -358,11 +371,11 @@ export default function App() {
             grouped[src] = srcResults.map((r, idx) => {
               const matchArtists = Array.isArray(r.match_artists)
                 ? r.match_artists
-                : (r.match_artists || "").split(", ").filter(Boolean);
+                : (r.match_artists || '').split(', ').filter(Boolean);
               const cand = {
                 id: `${result.album_id}-${src}-${idx}`,
                 source: src,
-                artist: matchArtists[0] || "Unknown",
+                artist: matchArtists[0] || 'Unknown',
                 match_artists: matchArtists,
                 title: r.match_title,
                 match_title: r.match_title,
@@ -372,7 +385,13 @@ export default function App() {
                 track_count: r.track_count,
                 cover_url: r.cover_url,
               };
-              return { ...cand, match: scoreCandidate({ artist: result.artist, album: result.title }, cand) };
+              return {
+                ...cand,
+                match: scoreCandidate(
+                  { artist: result.artist, album: result.title },
+                  cand
+                ),
+              };
             });
           }
         });
@@ -392,7 +411,7 @@ export default function App() {
         );
         const best = getBestCandidate(allCands);
         if (best && best.match >= 0.5) {
-          const defaultFormat = best.source === "yandex" ? "2" : null;
+          const defaultFormat = best.source === 'yandex' ? '2' : null;
           initialChoices[item.album.id] = {
             candidateId: best.id,
             format: defaultFormat,
@@ -402,24 +421,22 @@ export default function App() {
       });
       setChoices(initialChoices);
       setSearchItems(items);
-      setStep("results");
+      setStep('results');
       pushLog([
         {
-          type: "info",
-          text: tstamp(
-            `Search complete. ${selectedAlbums.length} album(s).`
-          ),
+          type: 'info',
+          text: tstamp(`Search complete. ${selectedAlbums.length} album(s).`),
         },
       ]);
     } catch (err) {
-      console.error("Search failed:", err);
+      console.error('Search failed:', err);
       pushLog([
         {
-          type: "error",
+          type: 'error',
           text: tstamp(`Search failed: ${err.message}`),
         },
       ]);
-      setStep("select");
+      setStep('select');
     }
   }, [albums, selected, sources, availableSources]);
 
@@ -431,16 +448,16 @@ export default function App() {
   }, []);
 
   const [eventSourceRef, setEventSourceRef] = React.useState(null);
-  const [toastMessage, setToastMessage] = React.useState("");
+  const [toastMessage, setToastMessage] = React.useState('');
 
   const onDownload = React.useCallback(async () => {
     const toDownload = [];
     for (const it of searchItems) {
       const c = choices[it.album.id];
-      if (!c || c === "skip") continue;
-      const allCands = availableSources.map((s) => s.id).flatMap(
-        (s) => (Array.isArray(it.results[s]) ? it.results[s] : [])
-      );
+      if (!c || c === 'skip') continue;
+      const allCands = availableSources
+        .map((s) => s.id)
+        .flatMap((s) => (Array.isArray(it.results[s]) ? it.results[s] : []));
       const cand = allCands.find((x) => x.id === c.candidateId);
       if (!cand) continue;
 
@@ -459,9 +476,9 @@ export default function App() {
 
     if (toDownload.length === 0) {
       setToastMessage(
-        lang === "ru"
-          ? "Выберите альбомы для загрузки"
-          : "Select albums to download"
+        lang === 'ru'
+          ? 'Выберите альбомы для загрузки'
+          : 'Select albums to download'
       );
       return;
     }
@@ -469,15 +486,15 @@ export default function App() {
     // Step 1: POST /api/download/stream/claim first
     let eventSource = null;
     try {
-      const claimRes = await fetch("/api/download/stream/claim", {
-        method: "POST",
+      const claimRes = await fetch('/api/download/stream/claim', {
+        method: 'POST',
       });
 
       if (!claimRes.ok && claimRes.status === 409) {
         setToastMessage(
-          lang === "ru"
-            ? "Загрузка уже открыта в другой вкладке — закройте её чтобы продолжить"
-            : "Download is already being watched in another tab — close it to take over"
+          lang === 'ru'
+            ? 'Загрузка уже открыта в другой вкладке — закройте её чтобы продолжить'
+            : 'Download is already being watched in another tab — close it to take over'
         );
         return;
       }
@@ -487,7 +504,7 @@ export default function App() {
       }
 
       // Step 2: Open EventSource
-      eventSource = new EventSource("/api/download/stream");
+      eventSource = new EventSource('/api/download/stream');
       setEventSourceRef(eventSource);
 
       // Find choice format for each item
@@ -498,18 +515,18 @@ export default function App() {
           artist: item.artist,
           album: item.title,
           source: item.source,
-          format: choice?.format || "Default",
+          format: choice?.format || 'Default',
           item_index: idx + 1,
           item_total: toDownload.length,
-          status: "starting",
-          message: "",
+          status: 'starting',
+          message: '',
           progress: 0,
         };
       });
       setDownloads(initialDownloads);
       pushLog([
         {
-          type: "dim",
+          type: 'dim',
           text: tstamp(`Starting download of ${toDownload.length} album(s)…`),
         },
       ]);
@@ -517,27 +534,30 @@ export default function App() {
       // Attach SSE handlers with one-retry logic on connection error
       let retried = false;
       const attachSSEHandlers = (es) => {
-        es.addEventListener("message", (event) => {
+        es.addEventListener('message', (event) => {
           const parsed = parseSSEEvent(event.data);
           if (!parsed) return;
 
-          if (parsed.type === "log") {
-            pushLog([{ type: "info", text: parsed.text }]);
-          } else if (parsed.type === "progress") {
+          if (parsed.type === 'log') {
+            pushLog([{ type: 'info', text: parsed.text }]);
+          } else if (parsed.type === 'progress') {
             setDownloads((prev) => applyProgressUpdate(prev, parsed.payload));
-          } else if (parsed.type === "done") {
+          } else if (parsed.type === 'done') {
             es.close();
             setEventSourceRef(null);
             setDownloads((prev) =>
               prev.map((d) => {
-                if (["done", "failed"].includes(d.status)) return d;
-                if (["downloaded", "importing"].includes(d.status)) {
-                  return { ...d, status: "done", progress: 100 };
+                if (['done', 'failed'].includes(d.status)) return d;
+                if (['downloaded', 'importing'].includes(d.status)) {
+                  return { ...d, status: 'done', progress: 100 };
                 }
                 return {
                   ...d,
-                  status: "failed",
-                  message: lang === "ru" ? "Нет ответа от сервера" : "No progress received",
+                  status: 'failed',
+                  message:
+                    lang === 'ru'
+                      ? 'Нет ответа от сервера'
+                      : 'No progress received',
                   progress: 100,
                 };
               })
@@ -546,58 +566,65 @@ export default function App() {
         });
 
         es.onerror = () => {
-          console.error("SSE connection error");
+          console.error('SSE connection error');
           es.close();
           setEventSourceRef(null);
 
           if (!retried) {
             retried = true;
             setToastMessage(
-              lang === "ru"
-                ? "Соединение потеряно — переподключение…"
-                : "Connection lost — retrying…"
+              lang === 'ru'
+                ? 'Соединение потеряно — переподключение…'
+                : 'Connection lost — retrying…'
             );
             // Claim immediately (not after a delay) to minimise the window
             // where the old server-side generator can pop and discard events
             // before the generation counter is incremented by the takeover.
             (async () => {
               try {
-                const claimRes = await fetch("/api/download/stream/claim", {
-                  method: "POST",
-                  headers: { "Content-Type": "application/json" },
+                const claimRes = await fetch('/api/download/stream/claim', {
+                  method: 'POST',
+                  headers: { 'Content-Type': 'application/json' },
                   body: JSON.stringify({ reconnect: true }),
                 });
                 if (!claimRes.ok) {
                   setToastMessage(
-                    lang === "ru"
-                      ? "Соединение потеряно"
-                      : "Lost connection to backend"
+                    lang === 'ru'
+                      ? 'Соединение потеряно'
+                      : 'Lost connection to backend'
                   );
                   return;
                 }
-                const newEs = new EventSource("/api/download/stream");
+                const newEs = new EventSource('/api/download/stream');
                 setEventSourceRef(newEs);
                 attachSSEHandlers(newEs);
-                setToastMessage("");
+                setToastMessage('');
               } catch {
                 setToastMessage(
-                  lang === "ru"
-                    ? "Соединение потеряно"
-                    : "Lost connection to backend"
+                  lang === 'ru'
+                    ? 'Соединение потеряно'
+                    : 'Lost connection to backend'
                 );
               }
             })();
           } else {
             setToastMessage(
-              lang === "ru"
-                ? "Соединение потеряно"
-                : "Lost connection to backend"
+              lang === 'ru'
+                ? 'Соединение потеряно'
+                : 'Lost connection to backend'
             );
             setDownloads((prev) =>
               prev.map((d) =>
-                ["done", "failed"].includes(d.status)
+                ['done', 'failed'].includes(d.status)
                   ? d
-                  : { ...d, status: "failed", message: lang === "ru" ? "Соединение потеряно" : "Connection lost" }
+                  : {
+                      ...d,
+                      status: 'failed',
+                      message:
+                        lang === 'ru'
+                          ? 'Соединение потеряно'
+                          : 'Connection lost',
+                    }
               )
             );
           }
@@ -606,9 +633,9 @@ export default function App() {
       attachSSEHandlers(eventSource);
 
       // Step 3: POST /api/download with items
-      const downloadRes = await fetch("/api/download", {
-        method: "POST",
-        headers: { "Content-Type": "application/json" },
+      const downloadRes = await fetch('/api/download', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
         body: JSON.stringify({ items: toDownload }),
       });
 
@@ -616,11 +643,11 @@ export default function App() {
         eventSource.close();
         setEventSourceRef(null);
         setToastMessage(
-          lang === "ru"
-            ? "Загрузка уже запущена на сервере"
-            : "A download is already running on the server"
+          lang === 'ru'
+            ? 'Загрузка уже запущена на сервере'
+            : 'A download is already running on the server'
         );
-        setStep("results");
+        setStep('results');
         return;
       }
 
@@ -630,19 +657,17 @@ export default function App() {
         throw new Error(`Download failed: ${downloadRes.status}`);
       }
 
-      setStep("download");
+      setStep('download');
     } catch (err) {
-      console.error("Download error:", err);
+      console.error('Download error:', err);
       if (eventSource) {
         eventSource.close();
         setEventSourceRef(null);
       }
       setToastMessage(
-        lang === "ru"
-          ? `Ошибка: ${err.message}`
-          : `Error: ${err.message}`
+        lang === 'ru' ? `Ошибка: ${err.message}` : `Error: ${err.message}`
       );
-      setStep("results");
+      setStep('results');
     }
   }, [searchItems, choices, lang, availableSources]);
 
@@ -665,9 +690,11 @@ export default function App() {
     setDownloads([]);
     setLogLines([]);
     const initialSources = {};
-    availableSources.forEach((s) => { initialSources[s.id] = true; });
+    availableSources.forEach((s) => {
+      initialSources[s.id] = true;
+    });
     setSources(initialSources);
-    setStep("select");
+    setStep('select');
     runFetch();
   };
 
@@ -681,22 +708,18 @@ export default function App() {
           theme={theme}
           setTheme={handleSetTheme}
           lidarrStatus={
-            fetchState === "loading"
-              ? "syncing"
-              : fetchState === "error"
-                ? "err"
-                : "ok"
+            fetchState === 'loading'
+              ? 'syncing'
+              : fetchState === 'error'
+                ? 'err'
+                : 'ok'
           }
-          lastSync={
-            fetchState === "ready"
-              ? `${t.last_sync}: ${lastSync}`
-              : ""
-          }
+          lastSync={fetchState === 'ready' ? `${t.last_sync}: ${lastSync}` : ''}
         />
 
         <Stepper step={step} lang={lang} />
 
-        {step === "select" && (
+        {step === 'select' && (
           <SelectStep
             t={t}
             lang={lang}
@@ -712,7 +735,7 @@ export default function App() {
           />
         )}
 
-        {step === "searching" && (
+        {step === 'searching' && (
           <div
             className="empty-state"
             style={{ paddingTop: 80, paddingBottom: 80 }}
@@ -720,46 +743,55 @@ export default function App() {
             <div className="ico">
               <div className="spinner lg"></div>
             </div>
-            <h3>{lang === "ru" ? "Идёт поиск…" : "Searching…"}</h3>
+            <h3>{lang === 'ru' ? 'Идёт поиск…' : 'Searching…'}</h3>
             <p>
-              {lang === "ru"
+              {lang === 'ru'
                 ? `Опрашиваем ${Object.values(sources).filter(Boolean).length} источник(ов) по ${selected.size} альбому(ам).`
                 : `Querying ${Object.values(sources).filter(Boolean).length} source(s) for ${selected.size} album(s).`}
             </p>
           </div>
         )}
 
-        {step === "results" && (
+        {step === 'results' && (
           <ResultsStep
             t={t}
             lang={lang}
             items={searchItems}
             choices={choices}
             setChoice={setChoice}
-            onBack={() => setStep("select")}
+            onBack={() => setStep('select')}
             onDownload={onDownload}
             sources={availableSources.map((s) => s.id)}
           />
         )}
 
-        {step === "download" && (
+        {step === 'download' && (
           <DownloadStep
             t={t}
             lang={lang}
             downloads={downloads}
             logLines={logLines}
-            allDone={downloads.length > 0 && downloads.every((d) => d.status === "done" || d.status === "failed")}
-            anyFailed={downloads.some((d) => d.status === "failed")}
+            allDone={
+              downloads.length > 0 &&
+              downloads.every(
+                (d) => d.status === 'done' || d.status === 'failed'
+              )
+            }
+            anyFailed={downloads.some((d) => d.status === 'failed')}
             importEnabled={defaultConfig?.import_enabled ?? true}
             onStartOver={onStartOver}
-            onLogCopy={() => navigator.clipboard?.writeText(logLines.map((l) => l.text).join("\n"))}
+            onLogCopy={() =>
+              navigator.clipboard?.writeText(
+                logLines.map((l) => l.text).join('\n')
+              )
+            }
             onLogClear={() => setLogLines([])}
           />
         )}
       </div>
 
       {toastMessage && (
-        <div className="toast" role="alert" onClick={() => setToastMessage("")}>
+        <div className="toast" role="alert" onClick={() => setToastMessage('')}>
           {toastMessage}
         </div>
       )}
@@ -769,14 +801,14 @@ export default function App() {
         <TweakRadio
           label={t.theme}
           value={theme}
-          options={["system", "light", "dark"]}
+          options={['system', 'light', 'dark']}
           onChange={handleSetTheme}
         />
         <TweakSection label={t.language} />
         <TweakRadio
           label={t.language}
           value={lang}
-          options={["en", "ru"]}
+          options={['en', 'ru']}
           onChange={handleSetLang}
         />
       </TweaksPanel>

@@ -5,7 +5,9 @@ function levenshteinDistance(a, b) {
   b = b.toLowerCase();
   const m = a.length;
   const n = b.length;
-  const dp = Array(n + 1).fill(0).map(() => Array(m + 1).fill(0));
+  const dp = Array(n + 1)
+    .fill(0)
+    .map(() => Array(m + 1).fill(0));
 
   for (let i = 0; i <= m; i++) dp[0][i] = i;
   for (let j = 0; j <= n; j++) dp[j][0] = j;
@@ -25,11 +27,12 @@ function levenshteinDistance(a, b) {
 
 export function scoreCandidate(album, candidate) {
   const albumStr = `${album.artist} ${album.album}`.toLowerCase();
-  const candidateStr = `${candidate.match_artists.join(' ')} ${candidate.match_title}`.toLowerCase();
+  const candidateStr =
+    `${candidate.match_artists.join(' ')} ${candidate.match_title}`.toLowerCase();
 
   const dist = levenshteinDistance(albumStr, candidateStr);
   const maxLen = Math.max(albumStr.length, candidateStr.length);
-  const similarity = Math.max(0, 1 - (dist / maxLen));
+  const similarity = Math.max(0, 1 - dist / maxLen);
 
   return similarity;
 }
