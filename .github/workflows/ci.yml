@@ -1,0 +1,45 @@
+# CI for the AlbFetcharr frontend.
+#
+# Lives in .github/workflows/ so it runs unchanged on BOTH GitHub Actions and
+# Forgejo Actions (Forgejo scans .github/workflows/ by default). Keep it to
+# standard actions and `ubuntu-latest` so it stays portable across both runners.
+# `npm ci` honours .npmrc (maxsockets cap) — needed for the self-hosted runner.
+name: CI
+
+on:
+  push:
+    branches: [main]
+  pull_request:
+
+permissions:
+  contents: read
+
+jobs:
+  lint:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-node@v4
+        with:
+          node-version: '20'
+          cache: npm
+      - run: npm ci
+      - name: Lint (eslint)
+        run: npm run lint
+      - name: Format check (prettier)
+        run: npm run format:check
+
+  test:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-node@v4
+        with:
+          node-version: '20'
+          cache: npm
+      - run: npm ci
+      - name: Test (vitest)
+        run: npm run test
+      # Production build doubles as a sanity check that the SPA compiles.
+      - name: Build (sanity)
+        run: npm run build
