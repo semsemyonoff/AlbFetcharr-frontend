@@ -1358,11 +1358,16 @@ html[data-theme='light'] .pg-btn.on {
   border-radius: 999px;
   white-space: nowrap;
 }
-.dl-row.queued .status-mini {
+/* Intermediate buckets (starting/downloaded/importing) get neutral→active
+   coloring; only done/failed carry the green/red terminal accent. The backend
+   emits starting → downloading → downloaded → importing → done|failed. */
+.dl-row.queued .status-mini,
+.dl-row.starting .status-mini {
   background: var(--surface-hover);
   color: var(--text-mute);
 }
-.dl-row.downloading .status-mini {
+.dl-row.downloading .status-mini,
+.dl-row.downloaded .status-mini {
   background: var(--info-bg);
   color: var(--accent-blue);
 }
@@ -1384,7 +1389,7 @@ html[data-theme='light'] .pg-btn.on {
   color: var(--src-yandex);
   background: rgba(255, 204, 0, 0.12);
 }
-.src-badge.youtube {
+.src-badge.youtube_music {
   color: var(--src-youtube);
   background: rgba(255, 70, 88, 0.12);
 }
@@ -1744,5 +1749,72 @@ html[data-theme='light'] .log-inline .li-body {
   }
   .action-bar .btn-primary {
     margin-left: auto;
+  }
+
+  /* Step 2 — result album header wraps, candidate rows compact */
+  .ra-head {
+    flex-wrap: wrap;
+  }
+  .ra-head .meta {
+    flex: 1 1 60%;
+  }
+  .ra-head .right {
+    flex: 1 1 100%;
+    justify-content: flex-start;
+  }
+  .cand-radio {
+    grid-template-columns: 18px 1fr auto;
+    column-gap: 10px;
+    row-gap: 8px;
+  }
+  .cand-radio .cover {
+    display: none;
+  }
+  .cand-radio .rd {
+    grid-row: 1;
+    align-self: center;
+  }
+  .cand-radio .title {
+    white-space: nowrap;
+    overflow: hidden;
+    text-overflow: ellipsis;
+  }
+  .cand-radio .fmt-select {
+    grid-column: 2 / -1;
+    justify-self: start;
+  }
+
+  /* Step 3 — download rows single column, log shorter */
+  .dl-row {
+    grid-template-columns: 44px 1fr;
+    gap: 12px;
+  }
+  .dl-row .right-stat {
+    grid-column: 1 / -1;
+    flex-direction: row;
+    align-items: center;
+    justify-content: space-between;
+  }
+  .log-inline .li-body {
+    height: 240px;
+    padding: 12px 14px;
+  }
+}
+
+/* ============================================================
+   Responsive — Very small phones (≤ 380px)
+   ============================================================ */
+@media (max-width: 380px) {
+  .brand-name {
+    font-size: 17px;
+  }
+  .lang-toggle button {
+    padding: 5px 8px;
+  }
+  .dl-row {
+    grid-template-columns: 1fr;
+  }
+  .dl-row .cover {
+    display: none;
   }
 }
