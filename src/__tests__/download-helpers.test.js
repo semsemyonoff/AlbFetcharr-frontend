@@ -33,6 +33,16 @@ describe('parseSSEEvent', () => {
     const result = parseSSEEvent(JSON.stringify({ unknown: 'field' }));
     expect(result).toBeNull();
   });
+
+  it('treats an empty-string log as a log event (key presence, not truthiness)', () => {
+    const result = parseSSEEvent(JSON.stringify({ log: '' }));
+    expect(result).toEqual({ type: 'log', text: '' });
+  });
+
+  it('returns null for done:false (done is gated on truthiness)', () => {
+    const result = parseSSEEvent(JSON.stringify({ done: false }));
+    expect(result).toBeNull();
+  });
 });
 
 describe('applyProgressUpdate', () => {
@@ -151,6 +161,21 @@ describe('applyProgressUpdate', () => {
     const result = applyProgressUpdate(downloads, event);
     expect(result[0].item_index).toBe(3);
     expect(result[0].item_total).toBe(7);
+  });
+
+  it('keeps the prior message when the event carries no message', () => {
+    const downloads = [
+      {
+        album_id: 1,
+        status: 'downloading',
+        progress: 50,
+        message: 'Downloading track 3...',
+      },
+    ];
+    const event = { album_id: 1, status: 'downloaded' };
+    const result = applyProgressUpdate(downloads, event);
+    expect(result[0].message).toBe('Downloading track 3...');
+    expect(result[0].status).toBe('downloaded');
   });
 
   it('passes through speed/eta/numeric progress when the backend supplies them', () => {
