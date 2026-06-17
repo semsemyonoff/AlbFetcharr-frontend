@@ -70,6 +70,30 @@ describe('DownloadStep — i18n-resolved status labels', () => {
       );
     });
   });
+
+  it('shows the "Partial" warning label for a completed album with failed tracks', () => {
+    const en = renderDownload({
+      downloads: [makeDownload({ status: 'done', partial: true, errors: 2 })],
+    });
+    expect(en.container.querySelector('.status-mini').textContent).toBe(
+      I18N.en.status_partial
+    );
+    // The row + bar carry the partial (warning) class, not the success class.
+    expect(en.container.querySelector('.dl-row.partial')).not.toBeNull();
+    expect(en.container.querySelector('.progress-bar.partial')).not.toBeNull();
+    expect(en.container.querySelector('.progress-bar.done')).toBeNull();
+  });
+
+  it('does not flag partial while still downloading', () => {
+    const en = renderDownload({
+      downloads: [makeDownload({ status: 'downloading', partial: true })],
+    });
+    // partial only applies to terminal-ish states; mid-download stays downloading.
+    expect(en.container.querySelector('.status-mini').textContent).toBe(
+      I18N.en.status_downloading
+    );
+    expect(en.container.querySelector('.dl-row.partial')).toBeNull();
+  });
 });
 
 describe('DownloadStep — i18n-resolved headings + summaries', () => {

@@ -118,6 +118,7 @@ export const I18N = {
     status_starting: 'Starting',
     status_downloaded: 'Downloaded',
     status_importing: 'Importing',
+    status_partial: 'Partial',
   },
   ru: {
     appName: 'AlbFetcharr',
@@ -239,6 +240,7 @@ export const I18N = {
     status_starting: 'Начинается',
     status_downloaded: 'Скачано',
     status_importing: 'Импорт в Lidarr',
+    status_partial: 'Частично',
   },
 };
 

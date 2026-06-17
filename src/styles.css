@@ -1333,6 +1333,10 @@ html[data-theme='light'] .pg-btn.on {
 .dl-row .progress-bar.err .fill {
   background: var(--danger);
 }
+/* Partial album (completed with some failed tracks) — amber, between ok and err. */
+.dl-row .progress-bar.partial .fill {
+  background: var(--warn);
+}
 .dl-row .pct {
   font-family: var(--font-mono);
   font-size: 11.5px;
@@ -1382,6 +1386,15 @@ html[data-theme='light'] .pg-btn.on {
 .dl-row.failed .status-mini {
   background: var(--danger-bg);
   color: var(--danger);
+}
+/* Partial album warning — wins over the done/downloaded/importing rules above
+   (same specificity, declared later). */
+.dl-row.partial .status-mini {
+  background: var(--warn-bg);
+  color: var(--warn);
+}
+.done-partial-note {
+  color: var(--warn);
 }
 /* Batch position ("album N of M") — honest available data, not a track count. */
 .dl-row .batch-pos {

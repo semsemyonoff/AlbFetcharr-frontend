@@ -20,7 +20,12 @@ export function DownloadStep({
       bodyRef.current.scrollTop = bodyRef.current.scrollHeight;
   }, [logLines.length]);
 
-  const statusLabel = (s) => {
+  const statusLabel = (d) => {
+    // A partial album (some tracks failed but it still completed/imported) reads
+    // as a warning, not the plain terminal status.
+    if (d.partial && ['downloaded', 'importing', 'done'].includes(d.status)) {
+      return t.status_partial;
+    }
     const map = {
       starting: t.status_starting,
       downloading: t.status_downloading,
@@ -29,11 +34,14 @@ export function DownloadStep({
       done: t.status_done,
       failed: t.status_failed,
     };
-    return map[s] || s;
+    return map[d.status] || d.status;
   };
 
   const successCount = downloads.filter((d) => d.status === 'done').length;
   const failedCount = downloads.filter((d) => d.status === 'failed').length;
+  const partialCount = downloads.filter(
+    (d) => d.partial && d.status !== 'failed'
+  ).length;
 
   return (
     <>
@@ -74,8 +82,15 @@ export function DownloadStep({
         {downloads.map((d) => {
           const pctRounded = Math.floor(d.progress || 0);
           const statusCls = d.status || 'starting';
+          // A partial album (completed with some failed tracks) is flagged as a
+          // warning rather than a plain success.
+          const isPartial =
+            d.partial && ['downloaded', 'importing', 'done'].includes(d.status);
           return (
-            <div className={`dl-row ${statusCls}`} key={d.album_id}>
+            <div
+              className={`dl-row ${statusCls}${isPartial ? ' partial' : ''}`}
+              key={d.album_id}
+            >
               <div className="cover">
                 <div className="vinyl-stripes"></div>
                 <span style={{ position: 'relative' }}>
@@ -94,7 +109,7 @@ export function DownloadStep({
                 </div>
                 <div className="progress-wrap">
                   <div
-                    className={`progress-bar ${d.status === 'done' ? 'done' : ''} ${d.status === 'failed' ? 'err' : ''}`}
+                    className={`progress-bar ${d.status === 'done' && !isPartial ? 'done' : ''} ${d.status === 'failed' ? 'err' : ''} ${isPartial ? 'partial' : ''}`}
                   >
                     <div
                       className="fill"
@@ -108,7 +123,7 @@ export function DownloadStep({
                 </div>
               </div>
               <div className="right-stat">
-                <span className="status-mini">{statusLabel(statusCls)}</span>
+                <span className="status-mini">{statusLabel(d)}</span>
                 {d.item_total > 1 && (
                   <span className="batch-pos">
                     {I18N_FNS.batchPosition(lang, d.item_index, d.item_total)}
@@ -169,6 +184,12 @@ export function DownloadStep({
               importEnabled,
               successCount,
               failedCount
+            )}
+            {partialCount > 0 && (
+              <span className="done-partial-note">
+                {' '}
+                · {partialCount} {t.status_partial.toLowerCase()}
+              </span>
             )}
           </div>
           <div className="row-actions-center">

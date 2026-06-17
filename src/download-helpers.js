@@ -34,12 +34,21 @@ export function applyProgressUpdate(downloads, progressEvent) {
     if (item_index != null) updated.item_index = item_index;
     if (item_total != null) updated.item_total = item_total;
 
-    // Backend-gated passthrough: the SSE stream does NOT currently emit speed,
-    // eta, or a continuous numeric progress (see Post-Completion). This keeps
-    // such fields alive if the backend contract ever supplies them; until then
-    // they stay undefined and the bar falls back to the per-status bucket map.
+    // Backend-gated passthrough: the SSE stream MAY emit speed, eta, or a
+    // continuous numeric progress (per-track YouTube downloads do). This keeps
+    // such fields alive when the backend supplies them; otherwise they stay
+    // undefined and the bar falls back to the per-status bucket map.
     if (speed != null) updated.speed = speed;
     if (eta != null) updated.eta = eta;
+
+    // Partial album: the download finished but some tracks failed (e.g. region-
+    // locked / 403 after retries). The backend still imports what's available and
+    // reports status "downloaded"/"done" with partial=true + an errors count;
+    // the UI renders this as a warning, not a failure. Sticky once set so the
+    // later "done"/"importing" events (which omit it) do not clear the warning.
+    if (progressEvent.partial != null) updated.partial = progressEvent.partial;
+    if (progressEvent.errors != null) updated.errors = progressEvent.errors;
+
     updated.progress =
       typeof progressEvent.progress === 'number'
         ? progressEvent.progress
