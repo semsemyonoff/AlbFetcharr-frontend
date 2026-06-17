@@ -194,6 +194,32 @@ describe('applyProgressUpdate', () => {
     expect(result[0].progress).toBe(73);
   });
 
+  it('passes through partial + errors when the backend flags a partial album', () => {
+    const downloads = [{ album_id: 1, status: 'downloading', progress: 50 }];
+    const event = {
+      album_id: 1,
+      status: 'downloaded',
+      message: 'Downloaded with 1 failed track(s)',
+      partial: true,
+      errors: 1,
+    };
+    const result = applyProgressUpdate(downloads, event);
+    expect(result[0].partial).toBe(true);
+    expect(result[0].errors).toBe(1);
+    expect(result[0].status).toBe('downloaded');
+  });
+
+  it('keeps a previously-set partial flag when a later event omits it', () => {
+    const downloads = [
+      { album_id: 1, status: 'downloaded', progress: 85, partial: true },
+    ];
+    const event = { album_id: 1, status: 'done' };
+    const result = applyProgressUpdate(downloads, event);
+    // The sticky flag survives the terminal "done" event (which carries no partial).
+    expect(result[0].partial).toBe(true);
+    expect(result[0].status).toBe('done');
+  });
+
   it('falls back to the bucket map and leaks no undefined when fields are absent', () => {
     const downloads = [{ album_id: 1, status: 'starting', progress: 0 }];
     const event = { album_id: 1, status: 'downloading', message: '' };

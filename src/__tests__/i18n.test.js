@@ -54,6 +54,7 @@ describe('i18n', () => {
       'status_starting',
       'status_downloaded',
       'status_importing',
+      'status_partial',
     ];
     newKeys.forEach((key) => {
       expect(I18N.en[key], `en.${key}`).toBeTruthy();
