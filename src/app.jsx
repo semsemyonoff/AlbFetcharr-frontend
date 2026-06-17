@@ -4,7 +4,11 @@ import { I18N, I18N_FNS } from './i18n.js';
 import SelectStep from './select-step.jsx';
 import { ResultsStep } from './results-step.jsx';
 import { DownloadStep } from './download-step.jsx';
-import { scoreCandidate, getBestCandidate } from './results-helpers.js';
+import {
+  scoreCandidate,
+  getBestCandidate,
+  buildDownloadItems,
+} from './results-helpers.js';
 import { parseSSEEvent, applyProgressUpdate } from './download-helpers.js';
 import {
   TweaksPanel,
@@ -478,28 +482,11 @@ export default function App() {
   const [toastMessage, setToastMessage] = React.useState('');
 
   const onDownload = React.useCallback(async () => {
-    const toDownload = [];
-    for (const it of searchItems) {
-      const c = choices[it.album.id];
-      if (!c || c === 'skip') continue;
-      const allCands = availableSources
-        .map((s) => s.id)
-        .flatMap((s) => (Array.isArray(it.results[s]) ? it.results[s] : []));
-      const cand = allCands.find((x) => x.id === c.candidateId);
-      if (!cand) continue;
-
-      toDownload.push({
-        album_id: parseInt(it.album.id, 10),
-        artist: cand.artist || it.album.artist,
-        title: cand.title || it.album.album,
-        source: cand.source,
-        match_url: cand.url || cand.match_url,
-        match_title: cand.title || cand.match_title,
-        match_artists: cand.match_artists || [cand.artist],
-        quality: c.format || null,
-        root_folder: it.album.root_folder,
-      });
-    }
+    const toDownload = buildDownloadItems(
+      searchItems,
+      choices,
+      availableSources.map((s) => s.id)
+    );
 
     if (toDownload.length === 0) {
       setToastMessage(I18N[lang].select_to_download);

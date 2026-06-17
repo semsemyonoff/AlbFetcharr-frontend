@@ -1,5 +1,9 @@
 import { describe, it, expect } from 'vitest';
-import { scoreCandidate, getBestCandidate } from '../results-helpers';
+import {
+  scoreCandidate,
+  getBestCandidate,
+  buildDownloadItems,
+} from '../results-helpers';
 
 describe('results-helpers', () => {
   describe('scoreCandidate', () => {
@@ -92,6 +96,107 @@ describe('results-helpers', () => {
     it('returns null for empty array', () => {
       const best = getBestCandidate([]);
       expect(best).toBeNull();
+    });
+  });
+
+  describe('buildDownloadItems', () => {
+    const makeItem = (overrides = {}) => ({
+      album: {
+        id: '42',
+        artist: 'Lidarr Artist',
+        album: 'Lidarr Album',
+        root_folder: '/music',
+        ...(overrides.album || {}),
+      },
+      results: {
+        youtube_music: [
+          {
+            id: 'cand-1',
+            source: 'youtube_music',
+            artist: 'Match Artist',
+            match_artists: ['Match Artist'],
+            title: 'Match Title',
+            match_title: 'Match Title',
+            url: 'https://music.youtube.com/browse/X',
+            match_url: 'https://music.youtube.com/browse/X',
+          },
+        ],
+        ...(overrides.results || {}),
+      },
+    });
+
+    it('uses the Lidarr album identity, not the source match, for artist/title', () => {
+      const items = [makeItem()];
+      const choices = {
+        42: { candidateId: 'cand-1', source: 'youtube_music' },
+      };
+      const out = buildDownloadItems(items, choices, ['youtube_music']);
+      expect(out).toHaveLength(1);
+      expect(out[0].artist).toBe('Lidarr Artist');
+      expect(out[0].title).toBe('Lidarr Album');
+      expect(out[0].source).toBe('youtube_music');
+      expect(out[0].match_url).toBe('https://music.youtube.com/browse/X');
+    });
+
+    it('keeps a comma-containing artist intact (regression: split on ", ")', () => {
+      // The candidate's `artist` is match_artists[0] after the UI split on ", ",
+      // so it is the truncated first fragment. The payload must still carry the
+      // full Lidarr name so the on-disk folder/tags are not cut at the comma.
+      const fullName = 'Кобыла и Трупоглазые Жабы, Нашли Поздно Утром';
+      const items = [
+        makeItem({
+          album: { artist: fullName, album: '1917' },
+          results: {
+            youtube_music: [
+              {
+                id: 'cand-1',
+                source: 'youtube_music',
+                artist: 'Кобыла и Трупоглазые Жабы',
+                match_artists: [
+                  'Кобыла и Трупоглазые Жабы',
+                  'Нашли Поздно Утром',
+                ],
+                title: '1917',
+                match_title: '1917',
+                url: 'u',
+                match_url: 'u',
+              },
+            ],
+          },
+        }),
+      ];
+      const choices = {
+        42: { candidateId: 'cand-1', source: 'youtube_music' },
+      };
+      const out = buildDownloadItems(items, choices, ['youtube_music']);
+      expect(out[0].artist).toBe(fullName);
+      expect(out[0].title).toBe('1917');
+    });
+
+    it('skips items with no choice or a skip choice', () => {
+      const items = [makeItem(), makeItem({ album: { id: '43' } })];
+      const choices = {
+        42: 'skip',
+        // 43 has no entry
+      };
+      const out = buildDownloadItems(items, choices, ['youtube_music']);
+      expect(out).toHaveLength(0);
+    });
+
+    it('skips when the chosen candidate id is not found', () => {
+      const items = [makeItem()];
+      const choices = { 42: { candidateId: 'missing' } };
+      const out = buildDownloadItems(items, choices, ['youtube_music']);
+      expect(out).toHaveLength(0);
+    });
+
+    it('carries quality and root_folder through', () => {
+      const items = [makeItem()];
+      const choices = { 42: { candidateId: 'cand-1', format: '2' } };
+      const out = buildDownloadItems(items, choices, ['youtube_music']);
+      expect(out[0].quality).toBe('2');
+      expect(out[0].root_folder).toBe('/music');
+      expect(out[0].album_id).toBe(42);
     });
   });
 });

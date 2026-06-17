@@ -43,3 +43,41 @@ export function getBestCandidate(candidates) {
     (current.match || 0) > (best.match || 0) ? current : best
   );
 }
+
+/* Build the /api/download payload from the chosen candidates.
+ *
+ * The download identity (artist/title) is taken from the Lidarr album
+ * (it.album.*), NOT the source match: the backend keys the on-disk folder
+ * layout and its find_album_dir / check_album_status / post_import_cleanup
+ * lookups off the Lidarr names. The source match is only used to resolve which
+ * source/URL to fetch from. Using the match's artist would also corrupt names
+ * that contain a comma — the candidate's `artist` is `match_artists[0]` after
+ * splitting on ', ', so e.g. a band literally named "A, B" would download under
+ * just "A". The match metadata (match_title/match_artists) is still forwarded
+ * for reference.
+ */
+export function buildDownloadItems(searchItems, choices, sourceIds) {
+  const toDownload = [];
+  for (const it of searchItems) {
+    const c = choices[it.album.id];
+    if (!c || c === 'skip') continue;
+    const allCands = sourceIds.flatMap((s) =>
+      Array.isArray(it.results[s]) ? it.results[s] : []
+    );
+    const cand = allCands.find((x) => x.id === c.candidateId);
+    if (!cand) continue;
+
+    toDownload.push({
+      album_id: parseInt(it.album.id, 10),
+      artist: it.album.artist || cand.artist,
+      title: it.album.album || cand.title,
+      source: cand.source,
+      match_url: cand.url || cand.match_url,
+      match_title: cand.title || cand.match_title,
+      match_artists: cand.match_artists || [cand.artist],
+      quality: c.format || null,
+      root_folder: it.album.root_folder,
+    });
+  }
+  return toDownload;
+}
