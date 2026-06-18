@@ -162,7 +162,7 @@ Key modules:
   the "This run" panel. Groups follow the backend's `provider` tag (Yandex knobs
   stay under Yandex; yt-dlp under yt-dlp — no cross-source "general" group).
 - **`settings-helpers.js`** — pure logic: `indexSettings`, `diffDraft` (→ `{puts,
-  deletes}`), `effectiveValue`/`effectiveSource`, `buildOverridesPayload`, value
+deletes}`), `effectiveValue`/`effectiveSource`, `buildOverridesPayload`, value
   codecs (`boolToStr`/`strToBool`, `coverResToUi`/`uiToCoverRes`,
   `libraryMapToUi`/`uiToLibraryMap`), and advisory validators.
 - **`settings-fields.jsx`** — props-driven atomic controls: `OriginBadge`,
@@ -190,7 +190,7 @@ their contracts):
 - `GET /api/config` — default language / theme / `encryption_enabled` (whether
   `ALBFETCHARR_SECRET_KEY` is set; controls SecretField's blocked state).
 - `GET /api/settings` — array of `{key, group, type, scope, secret, source,
-  value, is_set, preview}` for every surfaced setting.
+value, is_set, preview}` for every surfaced setting.
 - `PUT /api/settings` body `{key: stringValue}` — upsert one or more settings.
 - `DELETE /api/settings/<key>` — reset one setting to env/default.
 - `GET /api/wanted` — Lidarr wanted/missing albums.

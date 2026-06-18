@@ -561,6 +561,14 @@ describe('buildOverridesPayload', () => {
     const result = buildOverridesPayload({}, overrides);
     expect(result).toEqual({ unknown_key: 'val' });
   });
+
+  it('drops cleared (empty-string) overrides so the download falls back to default', () => {
+    // A user clearing a number / cover-resolution field yields "" — never a
+    // valid session value, and the backend would 422 on it.
+    const overrides = { yandex_cover_resolution: '', ytdlp_format: 'flac' };
+    const result = buildOverridesPayload(committed, overrides);
+    expect(result).toEqual({ ytdlp_format: 'flac' });
+  });
 });
 
 // ── Nullable non-secret key scenarios ────────────────────────────────────────

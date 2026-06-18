@@ -278,10 +278,16 @@ export function coverResError({ number, original }) {
  *
  * All session-scoped keys are non-secret, so committedItem.value is a non-null
  * string — no masking/preview handling needed.
+ *
+ * Empty-string overrides are dropped: every session key is enum/bool/int/
+ * cover_resolution, so "" is never a valid value (the backend rejects it with
+ * 422). A cleared number/cover-resolution field therefore falls back to the
+ * global default instead of failing the download.
  */
 export function buildOverridesPayload(committedIndex, runOverrides) {
   const result = {};
   for (const [key, value] of Object.entries(runOverrides)) {
+    if (value === '') continue;
     const item = committedIndex[key];
     const committedValue = item ? item.value : null;
     if (value !== committedValue) {
