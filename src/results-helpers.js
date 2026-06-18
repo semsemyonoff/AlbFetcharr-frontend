@@ -67,7 +67,7 @@ export function buildDownloadItems(searchItems, choices, sourceIds) {
     const cand = allCands.find((x) => x.id === c.candidateId);
     if (!cand) continue;
 
-    toDownload.push({
+    const item = {
       album_id: parseInt(it.album.id, 10),
       artist: it.album.artist || cand.artist,
       title: it.album.album || cand.title,
@@ -75,9 +75,14 @@ export function buildDownloadItems(searchItems, choices, sourceIds) {
       match_url: cand.url || cand.match_url,
       match_title: cand.title || cand.match_title,
       match_artists: cand.match_artists || [cand.artist],
-      quality: c.format || null,
       root_folder: it.album.root_folder,
-    });
+    };
+    // Only send quality when explicitly picked by the user; null means the
+    // backend uses the session override or global default (routes.py:561-566).
+    if (c.format != null) {
+      item.quality = c.format;
+    }
+    toDownload.push(item);
   }
   return toDownload;
 }

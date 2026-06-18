@@ -35,6 +35,7 @@ function AlbumCard({
   setSkip,
   setActive,
   sources,
+  resolvedYandexQuality,
 }) {
   const a = item.album;
   const choice = choices[a.id];
@@ -163,10 +164,14 @@ function AlbumCard({
             candidates.map((c) => {
               const isChosen = chosenId === c.id;
               const matchPct = Math.round(c.match * 100);
-              const defaultFormat = c.source === 'yandex' ? '2' : null;
-              const fmt = isChosen
-                ? choice.format || defaultFormat
-                : defaultFormat;
+              // Display the resolved yandex_quality (from setting/override) when
+              // no explicit per-album pick; never seed choice.format on selection.
+              const fmt =
+                isChosen && choice.format != null
+                  ? choice.format
+                  : c.source === 'yandex'
+                    ? resolvedYandexQuality
+                    : null;
               const formatOptions = getFormatOptions(t, c.source);
               const showFormatSelect = formatOptions.length > 1;
 
@@ -180,7 +185,7 @@ function AlbumCard({
                     className="rd"
                     name={`cand-${a.id}`}
                     checked={isChosen}
-                    onChange={() => setChosen(a.id, c, defaultFormat)}
+                    onChange={() => setChosen(a.id, c, null)}
                   />
                   <div className="cover">
                     <div className="vinyl-stripes"></div>
@@ -255,6 +260,7 @@ export const ResultsStep = ({
   onBack,
   onDownload,
   sources = DEFAULT_SOURCES,
+  resolvedYandexQuality = '2',
 }) => {
   const setChosen = (albumId, candidate, format) => {
     setChoice(albumId, {
@@ -313,6 +319,7 @@ export const ResultsStep = ({
             setSkip={setSkip}
             setActive={setActive}
             sources={sources}
+            resolvedYandexQuality={resolvedYandexQuality}
           />
         ))}
       </div>

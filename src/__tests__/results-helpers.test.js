@@ -198,5 +198,67 @@ describe('results-helpers', () => {
       expect(out[0].root_folder).toBe('/music');
       expect(out[0].album_id).toBe(42);
     });
+
+    // ── Yandex quality precedence ─────────────────────────────────────────────
+
+    const makeYandexItem = () => ({
+      album: {
+        id: '10',
+        artist: 'Artist',
+        album: 'Album',
+        root_folder: '/music',
+      },
+      results: {
+        yandex: [
+          {
+            id: 'cand-y',
+            source: 'yandex',
+            artist: 'Artist',
+            match_artists: ['Artist'],
+            title: 'Album',
+            match_title: 'Album',
+            url: 'https://music.yandex.ru/album/1',
+            match_url: 'https://music.yandex.ru/album/1',
+          },
+        ],
+      },
+    });
+
+    it('omits quality for a Yandex item with choice.format === null (backend uses override/global)', () => {
+      const items = [makeYandexItem()];
+      const choices = {
+        10: { candidateId: 'cand-y', format: null, source: 'yandex' },
+      };
+      const out = buildDownloadItems(items, choices, ['yandex']);
+      expect(out).toHaveLength(1);
+      expect(out[0]).not.toHaveProperty('quality');
+    });
+
+    it('includes quality when explicitly chosen to "2" (FLAC)', () => {
+      const items = [makeYandexItem()];
+      const choices = {
+        10: { candidateId: 'cand-y', format: '2', source: 'yandex' },
+      };
+      const out = buildDownloadItems(items, choices, ['yandex']);
+      expect(out[0].quality).toBe('2');
+    });
+
+    it('includes quality when explicitly chosen to "0" (falsy-safe)', () => {
+      const items = [makeYandexItem()];
+      const choices = {
+        10: { candidateId: 'cand-y', format: '0', source: 'yandex' },
+      };
+      const out = buildDownloadItems(items, choices, ['yandex']);
+      expect(out[0].quality).toBe('0');
+    });
+
+    it('includes quality when explicitly chosen to "1"', () => {
+      const items = [makeYandexItem()];
+      const choices = {
+        10: { candidateId: 'cand-y', format: '1', source: 'yandex' },
+      };
+      const out = buildDownloadItems(items, choices, ['yandex']);
+      expect(out[0].quality).toBe('1');
+    });
   });
 });
