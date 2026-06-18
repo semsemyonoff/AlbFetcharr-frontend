@@ -55,6 +55,95 @@ describe('i18n', () => {
       'status_downloaded',
       'status_importing',
       'status_partial',
+      // settings strings
+      'settings_sub',
+      'back_to_app',
+      'nav_sources',
+      'nav_lidarr',
+      'nav_download',
+      'nav_advanced',
+      'save_changes',
+      'discard',
+      'all_saved',
+      'origin_saved',
+      'origin_env',
+      'origin_default',
+      'reset_inherited',
+      'secret_not_set',
+      'secret_from_env',
+      'secret_replace',
+      'secret_clear',
+      'secret_save',
+      'secret_cancel',
+      'secret_show',
+      'secret_hide',
+      'secret_new_ph',
+      'secret_blocked',
+      'enabled',
+      'disabled',
+      'sec_token',
+      'sec_quality',
+      'yandex_warn',
+      'yt_oauth_path',
+      'yt_client_id',
+      'yt_client_secret',
+      'yt_oauth_help',
+      'sc_only',
+      'sc_cookies_note',
+      'lidarr_url',
+      'lidarr_apikey',
+      'lidarr_import',
+      'lidarr_map',
+      'lidarr_map_help',
+      'conn_connected',
+      'conn_unreachable',
+      'conn_test',
+      'dl_yandex_quality',
+      'dl_group_yandex',
+      'dl_group_ytdlp',
+      'dl_group_general',
+      'dl_lyrics_yandex_note',
+      'dl_ytdlp_format',
+      'dl_ytdlp_quality',
+      'dl_lyrics',
+      'lyr_none',
+      'lyr_text',
+      'lyr_lrc',
+      'dl_cover_res',
+      'cover_original',
+      'dl_embed',
+      'dl_skip',
+      'dl_clear_comments',
+      'dl_only_music',
+      'dl_stick_artist',
+      'adv_path_pattern',
+      'adv_yandex_path_pattern',
+      'adv_ytdlp_path_pattern',
+      'adv_unsafe_path',
+      'adv_unsafe_hint',
+      'adv_request_delay',
+      'adv_ytdlp_retries',
+      'adv_network',
+      'adv_timeout',
+      'adv_tries',
+      'adv_retry_delay',
+      'adv_compat',
+      'adv_cookies',
+      'adv_cookies_note',
+      'show_advanced',
+      'hide_advanced',
+      'err_number',
+      'err_map',
+      'err_url',
+      'this_run',
+      'this_run_open',
+      'this_run_banner',
+      'overridden',
+      'reset_default',
+      'from_default',
+      'units_kbps',
+      'units_px',
+      'units_s',
     ];
     newKeys.forEach((key) => {
       expect(I18N.en[key], `en.${key}`).toBeTruthy();
@@ -140,6 +229,21 @@ describe('I18N_FNS — count-dependent interpolation', () => {
   it('batchPosition renders "album N of M" honestly in both languages', () => {
     expect(I18N_FNS.batchPosition('en', 2, 5)).toBe('album 2 of 5');
     expect(I18N_FNS.batchPosition('ru', 1, 3)).toBe('альбом 1 из 3');
+  });
+
+  it('settingsUnsaved agrees the noun with the count in en + ru (1 / 2–4 / 5+)', () => {
+    expect(I18N_FNS.settingsUnsaved('en', 1)).toBe('1 unsaved change');
+    expect(I18N_FNS.settingsUnsaved('en', 2)).toBe('2 unsaved changes');
+    expect(I18N_FNS.settingsUnsaved('en', 5)).toBe('5 unsaved changes');
+    expect(I18N_FNS.settingsUnsaved('ru', 1)).toBe('1 несохранённое изменение');
+    expect(I18N_FNS.settingsUnsaved('ru', 3)).toBe('3 несохранённых изменения');
+    expect(I18N_FNS.settingsUnsaved('ru', 5)).toBe('5 несохранённых изменений');
+    expect(I18N_FNS.settingsUnsaved('ru', 11)).toBe(
+      '11 несохранённых изменений'
+    );
+    expect(I18N_FNS.settingsUnsaved('ru', 21)).toBe(
+      '21 несохранённое изменение'
+    );
   });
 
   it('downloadDoneCardBody agrees verb/noun and appends failures', () => {
