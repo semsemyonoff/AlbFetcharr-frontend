@@ -46,6 +46,7 @@ import {
   CoverResolution,
   SecretField,
   OriginBadge,
+  ResetBtn,
 } from './settings-fields';
 
 export function SettingsScreen({
@@ -489,6 +490,11 @@ export function SettingsScreen({
                   </div>
                   <div className="toggle-slot">
                     <OriginBadge source={effSrc('enable_yandex')} t={t} />
+                    <ResetBtn
+                      show={canReset('enable_yandex')}
+                      title={t.reset_inherited}
+                      onClick={() => resetField('enable_yandex')}
+                    />
                     <Toggle
                       value={yandexOn}
                       onChange={(v) => setField('enable_yandex', boolToStr(v))}
@@ -539,6 +545,11 @@ export function SettingsScreen({
                     <OriginBadge
                       source={effSrc('enable_youtube_music')}
                       t={t}
+                    />
+                    <ResetBtn
+                      show={canReset('enable_youtube_music')}
+                      title={t.reset_inherited}
+                      onClick={() => resetField('enable_youtube_music')}
                     />
                     <Toggle
                       value={youtubeOn}
@@ -614,6 +625,11 @@ export function SettingsScreen({
                   </div>
                   <div className="toggle-slot">
                     <OriginBadge source={effSrc('enable_soundcloud')} t={t} />
+                    <ResetBtn
+                      show={canReset('enable_soundcloud')}
+                      title={t.reset_inherited}
+                      onClick={() => resetField('enable_soundcloud')}
+                    />
                     <Toggle
                       value={soundcloudOn}
                       onChange={(v) =>

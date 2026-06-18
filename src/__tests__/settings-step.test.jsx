@@ -299,6 +299,31 @@ describe('SettingsScreen — reset → deletes', () => {
     expect(puts.lidarr_url).toBeUndefined();
   });
 
+  it('resetting a db-sourced source enable toggle adds it to deletes', async () => {
+    const onSave = vi.fn().mockResolvedValue(undefined);
+    const committed = makeCommitted({
+      enable_yandex: makeItem('enable_yandex', {
+        type: 'bool',
+        value: '0',
+        source: 'db',
+      }),
+    });
+    const { container } = renderScreen({ onSave, committed });
+
+    // The reset button should appear in the Yandex source-card header
+    const resetBtn = container.querySelector('.toggle-slot .reset-btn');
+    expect(resetBtn).toBeTruthy();
+    fireEvent.click(resetBtn);
+
+    const saveBtn = container.querySelector('.btn.btn-primary');
+    fireEvent.click(saveBtn);
+
+    await waitFor(() => expect(onSave).toHaveBeenCalledOnce());
+    const [puts, deletes] = onSave.mock.calls[0];
+    expect(deletes).toContain('enable_yandex');
+    expect(puts.enable_yandex).toBeUndefined();
+  });
+
   it('editing a db field and then resetting: reset wins, edit removed', async () => {
     const onSave = vi.fn().mockResolvedValue(undefined);
     const committed = makeCommitted({

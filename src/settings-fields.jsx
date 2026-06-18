@@ -325,8 +325,23 @@ export function SecretField({
     setShowInput(false);
   };
 
-  // blocked
+  // blocked — encryption is disabled, so secrets cannot be stored in the DB.
+  // An env-provided secret is still effective (the backend reads it directly and
+  // returns is_set/source='env'/preview regardless of the key), so surface it as
+  // "from environment" — read-only (no Replace, since storing is unavailable).
+  // Only fall back to the blocked hint when there is no env secret to show.
   if (!encryptionReady) {
+    if (committedItem?.is_set && committedItem.source === 'env') {
+      return (
+        <div className="secret-field env">
+          <div className="set-input greyed env-secret">
+            <span>
+              {committedItem.preview || '••••••••'} {t.secret_from_env}
+            </span>
+          </div>
+        </div>
+      );
+    }
     return (
       <div className="secret-field blocked">
         <div className="set-input disabled-look">
@@ -410,7 +425,9 @@ export function SecretField({
     return (
       <div className="secret-field env">
         <div className="set-input greyed env-secret">
-          <span>•••••••• {t.secret_from_env}</span>
+          <span>
+            {committedItem.preview || '••••••••'} {t.secret_from_env}
+          </span>
         </div>
         <button type="button" className="btn btn-sm" onClick={enterEditing}>
           {t.secret_replace}

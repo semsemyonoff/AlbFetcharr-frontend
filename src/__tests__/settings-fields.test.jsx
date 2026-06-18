@@ -506,6 +506,44 @@ describe('SecretField — blocked', () => {
     );
     expect(container.querySelector('input')).toBeNull();
   });
+
+  it('surfaces an env secret as "from environment" even when blocked', () => {
+    // The backend returns is_set/source=env/preview for env secrets regardless of
+    // whether encryption is enabled, so the effective source must stay visible.
+    const { container } = render(
+      <SecretField
+        committedItem={makeSecretItem({
+          is_set: true,
+          source: 'env',
+          preview: '••••3f9a',
+        })}
+        draftValue={null}
+        encryptionReady={false}
+        t={t}
+        onSet={() => {}}
+        onClear={() => {}}
+      />
+    );
+    expect(container.querySelector('.secret-field.env')).toBeTruthy();
+    expect(container.querySelector('.secret-field.blocked')).toBeNull();
+    expect(container.textContent).toContain(t.secret_from_env);
+    // the masked API preview must be shown, not generic bullets
+    expect(container.textContent).toContain('••••3f9a');
+  });
+
+  it('offers no Replace for an env secret while blocked (storing unavailable)', () => {
+    const { queryByText } = render(
+      <SecretField
+        committedItem={makeSecretItem({ is_set: true, source: 'env' })}
+        draftValue={null}
+        encryptionReady={false}
+        t={t}
+        onSet={() => {}}
+        onClear={() => {}}
+      />
+    );
+    expect(queryByText(t.secret_replace)).toBeNull();
+  });
 });
 
 describe('SecretField — unset', () => {
@@ -677,10 +715,14 @@ describe('SecretField — set (db)', () => {
 });
 
 describe('SecretField — env', () => {
-  it('renders env state for an env-provided secret (is_set true)', () => {
+  it('renders env state with the masked API preview (is_set true)', () => {
     const { container } = render(
       <SecretField
-        committedItem={makeSecretItem({ is_set: true, source: 'env' })}
+        committedItem={makeSecretItem({
+          is_set: true,
+          source: 'env',
+          preview: '••••3f9a',
+        })}
         draftValue={null}
         encryptionReady={true}
         t={t}
@@ -690,6 +732,8 @@ describe('SecretField — env', () => {
     );
     expect(container.querySelector('.secret-field.env')).toBeTruthy();
     expect(container.textContent).toContain(t.secret_from_env);
+    // the masked API preview must be shown, not generic bullets
+    expect(container.textContent).toContain('••••3f9a');
   });
 
   it('shows Replace but not Clear for an env secret', () => {
