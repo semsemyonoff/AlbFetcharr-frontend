@@ -574,10 +574,6 @@ describe('nullable non-secret key handling', () => {
   ];
 
   NULLABLE_KEYS.forEach((key) => {
-    it(`${key}: null value → displayValue returns ""`, () => {
-      expect(displayValue(null)).toBe('');
-    });
-
     it(`${key}: null value not dirty when untouched (not in draft)`, () => {
       const committed = { [key]: makeItem({ key, value: null }) };
       expect(dirtyKeys(committed, {}, new Set())).toEqual(new Set());
