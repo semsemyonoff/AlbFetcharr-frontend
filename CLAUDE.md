@@ -4,10 +4,11 @@ This file provides guidance to Claude Code (claude.ai/code) when working with co
 
 ## Project
 
-AlbFetcharr's **frontend**: a React 18 + Vite single-page app that drives a
+AlbFetcharr's **frontend**: a React 19 + Vite single-page app that drives a
 three-step flow — **Select → Results → Download** — for fetching Lidarr's
 wanted/missing albums from music sources (Yandex Music, YouTube Music,
-SoundCloud) and importing them.
+SoundCloud) and importing them, plus a **Settings screen** for managing
+server-side defaults and a **"This run"** per-download overrides panel.
 
 This repository is the **frontend only**. It talks to the AlbFetcharr backend
 purely over HTTP (`/api`, `/static`); there is no shared code or filesystem with
@@ -76,16 +77,21 @@ production `base`, and the Vitest block.
     ├── select-step.jsx     # Step 1 — pick wanted albums
     ├── results-step.jsx    # Step 2 — per-album source candidates
     ├── download-step.jsx   # Step 3 — live download progress (SSE)
-    ├── select-helpers.js   # sortAlbums / filterAlbums / paginate
-    ├── results-helpers.js  # scoreCandidate (Levenshtein) / getBestCandidate
-    ├── download-helpers.js # parseSSEEvent / applyProgressUpdate
-    ├── accent-helpers.js   # ACCENT_PALETTES + accentVars/applyAccent/parseAccent (palette → CSS vars)
-    ├── i18n.js             # I18N (en/ru) tables + AGO_FNS + I18N_FNS/pluralRu (interpolation + RU plurals)
-    ├── icons.jsx           # <Icon name=… /> named SVG set
-    ├── tweaks-panel.jsx    # Generic settings UI kit + useTweaks() hook
-    ├── styles.css          # All styling via CSS variables; light/dark/system themes; responsive (1024/640/380)
-    ├── assets/             # Static assets (logo)
-    └── __tests__/          # Vitest specs for the pure helpers, i18n, theme resolution
+    ├── select-helpers.js      # sortAlbums / filterAlbums / paginate
+    ├── results-helpers.js     # scoreCandidate (Levenshtein) / getBestCandidate / buildDownloadItems
+    ├── download-helpers.js    # parseSSEEvent / applyProgressUpdate
+    ├── accent-helpers.js      # ACCENT_PALETTES + accentVars/applyAccent/parseAccent (palette → CSS vars)
+    ├── settings-catalog.js    # SETTINGS_FIELDS / SESSION_FIELDS / SETTINGS_SECTIONS — key→UI map (no React)
+    ├── settings-helpers.js    # indexSettings / diffDraft / codecs / validators / buildOverridesPayload (no React)
+    ├── settings-fields.jsx    # OriginBadge / ResetBtn / Field / Toggle / Segmented / Select / SecretField / …
+    ├── settings-step.jsx      # SettingsScreen — global settings screen with draft, nav, save bar
+    ├── session-overrides.jsx  # ThisRunPanel — per-download Tier-3 overrides, pre-filled from global defaults
+    ├── i18n.js                # I18N (en/ru) tables + AGO_FNS + I18N_FNS/pluralRu (interpolation + RU plurals)
+    ├── icons.jsx              # <Icon name=… /> named SVG set (incl. eye/eyeOff for SecretField)
+    ├── tweaks-panel.jsx       # Developer overlay (unrelated to Settings — its own UI kit + useTweaks hook)
+    ├── styles.css             # All styling via CSS variables; light/dark/system themes; responsive (1024/640/380)
+    ├── assets/                # Static assets (logo)
+    └── __tests__/             # Vitest specs for the pure helpers, i18n, theme resolution, settings
 ```
 
 `src/*-helpers.js` are **pure** (no React imports) and each has a co-located test
@@ -131,16 +137,67 @@ On top of the steps, `App` also manages: language (`en`/`ru`) and theme
 `prefers-color-scheme` listener for `system`), and an initial `/api/config`
 fetch for server-provided defaults.
 
+## Settings architecture
+
+The Settings feature has two user surfaces:
+
+- **Settings screen** (`settings-step.jsx`) — reached via the ⚙ cog in the app
+  header. Edits the global (server-side) layer via `PUT /api/settings` (batch
+  saves) and `DELETE /api/settings/<key>` (reset to env/default). The backend is
+  the single source of truth for resolved values and origin (`source ∈ db/env/default`).
+- **"This run" panel** (`session-overrides.jsx`) — collapsible panel above
+  SelectStep. Pre-filled from the global resolved defaults; changes are sent as
+  `overrides` in `POST /api/download` (Tier-3/session keys only). Never writes
+  to the saved layer.
+
+The architecture is backend-driven: the frontend holds no env/default layer of
+its own. `GET /api/settings` returns the full resolved array; the frontend renders
+it through a thin presentation catalog.
+
+Key modules:
+
+- **`settings-catalog.js`** — the only place that maps backend registry keys to
+  UI controls (label, group, control type, choices). `SETTINGS_FIELDS` covers
+  every surfaced global key; `SESSION_FIELDS` covers every Tier-3 session key for
+  the "This run" panel. Groups follow the backend's `provider` tag (Yandex knobs
+  stay under Yandex; yt-dlp under yt-dlp — no cross-source "general" group).
+- **`settings-helpers.js`** — pure logic: `indexSettings`, `diffDraft` (→ `{puts,
+deletes}`), `effectiveValue`/`effectiveSource`, `buildOverridesPayload`, value
+  codecs (`boolToStr`/`strToBool`, `coverResToUi`/`uiToCoverRes`,
+  `libraryMapToUi`/`uiToLibraryMap`), and advisory validators.
+- **`settings-fields.jsx`** — props-driven atomic controls: `OriginBadge`,
+  `ResetBtn`, `Toggle`, `Segmented`, `Select`, `TextInput`, `NumberUnit`,
+  `SecretField` (blocked/set/env/unset/editing state machine from
+  `{committedItem, draftValue, encryptionReady}`).
+
+`app.jsx` fetches `/api/settings` once on mount and passes `committedSettings`
+(an index keyed by setting key) down to both surfaces. `encryptionReady` comes
+from `/api/config`'s `encryption_enabled` field. `buildOverridesPayload` diffs
+`runOverrides` against committed globals before including them in the download
+`POST` body.
+
+**Yandex quality precedence** (important invariant): `setChosen` passes
+`choice.format = null` when selecting a candidate (no per-item default is seeded).
+`buildDownloadItems` omits `quality` when `choice.format` is `null`, so the
+backend applies the session override or global default. An explicit user pick in
+ResultsStep still wins.
+
 ## Backend API (consumed)
 
 The SPA depends on these backend endpoints (paths only — the backend repo owns
 their contracts):
 
-- `GET /api/config` — default language / theme.
+- `GET /api/config` — default language / theme / `encryption_enabled` (whether
+  `ALBFETCHARR_SECRET_KEY` is set; controls SecretField's blocked state).
+- `GET /api/settings` — array of `{key, group, type, scope, secret, source,
+value, is_set, preview}` for every surfaced setting.
+- `PUT /api/settings` body `{key: stringValue}` — upsert one or more settings.
+- `DELETE /api/settings/<key>` — reset one setting to env/default.
 - `GET /api/wanted` — Lidarr wanted/missing albums.
 - `GET /api/sources` — available source providers.
 - `GET /api/search` — candidate matches for an album.
-- `POST /api/download` — start a download; progress arrives as SSE on
+- `POST /api/download` body `{items, overrides?}` — start a download; optional
+  `overrides: {key: stringValue}` (Tier-3 keys only). Progress arrives as SSE on
   `/api/download/stream`, gated by `POST /api/download/stream/claim`.
 
 ## Conventions

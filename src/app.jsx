@@ -22,6 +22,9 @@ import {
   applyAccent,
   parseAccent,
 } from './accent-helpers.js';
+import { SettingsScreen } from './settings-step.jsx';
+import { ThisRunPanel } from './session-overrides.jsx';
+import { indexSettings, buildOverridesPayload } from './settings-helpers.js';
 
 function nowHHMMSS() {
   const d = new Date();
@@ -38,6 +41,8 @@ const Header = ({
   setTheme,
   lidarrStatus,
   lastSync,
+  inSettings,
+  onSettingsToggle,
 }) => {
   const cycleTheme = () => {
     if (theme === 'system') setTheme('light');
@@ -104,6 +109,14 @@ const Header = ({
           }
           size={18}
         />
+      </button>
+      <button
+        className={`icon-btn${inSettings ? ' on' : ''}`}
+        onClick={onSettingsToggle}
+        aria-label={t.settings}
+        title={t.settings}
+      >
+        <Icon name="cog" size={18} />
       </button>
     </header>
   );
@@ -176,6 +189,51 @@ export default function App() {
   const [accent, setAccent] = React.useState(DEFAULT_ACCENT);
   const mqlCleanupRef = React.useRef(null);
 
+  // Settings state
+  const [encryptionReady, setEncryptionReady] = React.useState(false);
+  const [committedSettings, setCommittedSettings] = React.useState({});
+  const [view, setView] = React.useState('app');
+  const [runOverrides, setRunOverrides] = React.useState({});
+
+  const reloadSettings = React.useCallback(async () => {
+    try {
+      const res = await fetch('/api/settings');
+      if (res.ok) {
+        const items = await res.json();
+        setCommittedSettings(indexSettings(items));
+      }
+    } catch (err) {
+      console.error('Failed to reload settings:', err);
+    }
+  }, []);
+
+  const handleSettingsSave = React.useCallback(
+    async (puts, deletes) => {
+      if (Object.keys(puts).length > 0) {
+        const res = await fetch('/api/settings', {
+          method: 'PUT',
+          headers: { 'Content-Type': 'application/json' },
+          body: JSON.stringify(puts),
+        });
+        if (!res.ok) {
+          const data = await res.json().catch(() => ({}));
+          throw new Error(data.error || data.detail || `HTTP ${res.status}`);
+        }
+      }
+      for (const key of deletes) {
+        const res = await fetch(`/api/settings/${key}`, {
+          method: 'DELETE',
+        });
+        if (!res.ok) {
+          const data = await res.json().catch(() => ({}));
+          throw new Error(data.error || data.detail || `HTTP ${res.status}`);
+        }
+      }
+      await reloadSettings();
+    },
+    [reloadSettings]
+  );
+
   React.useEffect(() => {
     const fetchConfig = async () => {
       try {
@@ -183,6 +241,7 @@ export default function App() {
         if (response.ok) {
           const config = await response.json();
           setDefaultConfig(config);
+          setEncryptionReady(config.encryption_enabled ?? false);
 
           const storedLang = localStorage.getItem('albfetcharr.lang');
           const storedTheme = localStorage.getItem('albfetcharr.theme');
@@ -201,6 +260,8 @@ export default function App() {
     };
 
     fetchConfig();
+    // eslint-disable-next-line react-hooks/set-state-in-effect
+    reloadSettings();
   }, []);
 
   React.useEffect(() => {
@@ -442,10 +503,9 @@ export default function App() {
         );
         const best = getBestCandidate(allCands);
         if (best && best.match >= 0.5) {
-          const defaultFormat = best.source === 'yandex' ? '2' : null;
           initialChoices[item.album.id] = {
             candidateId: best.id,
-            format: defaultFormat,
+            format: null, // never seed; backend uses override/global default
             source: best.source,
           };
         }
@@ -616,11 +676,19 @@ export default function App() {
       };
       attachSSEHandlers(eventSource);
 
-      // Step 3: POST /api/download with items
+      // Step 3: POST /api/download with items (+ session overrides if set)
+      const sessionOverrides = buildOverridesPayload(
+        committedSettings,
+        runOverrides
+      );
+      const downloadBody = { items: toDownload };
+      if (Object.keys(sessionOverrides).length > 0) {
+        downloadBody.overrides = sessionOverrides;
+      }
       const downloadRes = await fetch('/api/download', {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify({ items: toDownload }),
+        body: JSON.stringify(downloadBody),
       });
 
       if (downloadRes.status === 409) {
@@ -647,7 +715,14 @@ export default function App() {
       setToastMessage(`${I18N[lang].error_prefix}: ${err.message}`);
       setStep('results');
     }
-  }, [searchItems, choices, lang, availableSources]);
+  }, [
+    searchItems,
+    choices,
+    lang,
+    availableSources,
+    committedSettings,
+    runOverrides,
+  ]);
 
   React.useEffect(() => {
     return () => {
@@ -667,6 +742,7 @@ export default function App() {
     setChoices({});
     setDownloads([]);
     setLogLines([]);
+    setRunOverrides({});
     const initialSources = {};
     availableSources.forEach((s) => {
       initialSources[s.id] = true;
@@ -675,6 +751,13 @@ export default function App() {
     setStep('select');
     runFetch();
   };
+
+  // Resolved yandex quality: run override → committed setting → hardcoded default.
+  // Passed to ResultsStep for display-only; never seeded into choice.format.
+  const resolvedYandexQuality =
+    runOverrides.yandex_quality ??
+    committedSettings.yandex_quality?.value ??
+    '2';
 
   return (
     <>
@@ -693,80 +776,108 @@ export default function App() {
                 : 'ok'
           }
           lastSync={fetchState === 'ready' ? `${t.last_sync}: ${lastSync}` : ''}
+          inSettings={view === 'settings'}
+          onSettingsToggle={() =>
+            setView((v) => (v === 'settings' ? 'app' : 'settings'))
+          }
         />
 
-        <Stepper step={step} lang={lang} />
-
-        {step === 'select' && (
-          <SelectStep
+        {view === 'settings' && (
+          <SettingsScreen
             t={t}
             lang={lang}
-            fetchState={fetchState}
-            onRefetch={runFetch}
-            albums={albums}
-            selected={selected}
-            setSelected={setSelected}
-            sources={sources}
-            setSources={setSources}
-            availableSources={availableSources}
-            onSearch={onSearch}
+            committed={committedSettings}
+            encryptionReady={encryptionReady}
+            onSave={handleSettingsSave}
+            onBack={() => setView('app')}
           />
         )}
 
-        {step === 'searching' && (
-          <div
-            className="empty-state"
-            style={{ paddingTop: 80, paddingBottom: 80 }}
-          >
-            <div className="ico">
-              <div className="spinner lg"></div>
-            </div>
-            <h3>{t.searching_title}</h3>
-            <p>
-              {I18N_FNS.searchingSubtitle(
-                lang,
-                Object.values(sources).filter(Boolean).length,
-                selected.size
-              )}
-            </p>
-          </div>
-        )}
+        {view === 'app' && (
+          <>
+            <Stepper step={step} lang={lang} />
 
-        {step === 'results' && (
-          <ResultsStep
-            t={t}
-            lang={lang}
-            items={searchItems}
-            choices={choices}
-            setChoice={setChoice}
-            onBack={() => setStep('select')}
-            onDownload={onDownload}
-            sources={availableSources.map((s) => s.id)}
-          />
-        )}
+            {step === 'select' && (
+              <>
+                <ThisRunPanel
+                  t={t}
+                  committed={committedSettings}
+                  overrides={runOverrides}
+                  setOverrides={setRunOverrides}
+                />
+                <SelectStep
+                  t={t}
+                  lang={lang}
+                  fetchState={fetchState}
+                  onRefetch={runFetch}
+                  albums={albums}
+                  selected={selected}
+                  setSelected={setSelected}
+                  sources={sources}
+                  setSources={setSources}
+                  availableSources={availableSources}
+                  onSearch={onSearch}
+                />
+              </>
+            )}
 
-        {step === 'download' && (
-          <DownloadStep
-            t={t}
-            lang={lang}
-            downloads={downloads}
-            logLines={logLines}
-            allDone={
-              downloads.length > 0 &&
-              downloads.every(
-                (d) => d.status === 'done' || d.status === 'failed'
-              )
-            }
-            anyFailed={downloads.some((d) => d.status === 'failed')}
-            importEnabled={defaultConfig?.import_enabled ?? true}
-            onStartOver={onStartOver}
-            onLogCopy={() =>
-              navigator.clipboard?.writeText(
-                logLines.map((l) => l.text).join('\n')
-              )
-            }
-            onLogClear={() => setLogLines([])}
-          />
+            {step === 'searching' && (
+              <div
+                className="empty-state"
+                style={{ paddingTop: 80, paddingBottom: 80 }}
+              >
+                <div className="ico">
+                  <div className="spinner lg"></div>
+                </div>
+                <h3>{t.searching_title}</h3>
+                <p>
+                  {I18N_FNS.searchingSubtitle(
+                    lang,
+                    Object.values(sources).filter(Boolean).length,
+                    selected.size
+                  )}
+                </p>
+              </div>
+            )}
+
+            {step === 'results' && (
+              <ResultsStep
+                t={t}
+                lang={lang}
+                items={searchItems}
+                choices={choices}
+                setChoice={setChoice}
+                onBack={() => setStep('select')}
+                onDownload={onDownload}
+                sources={availableSources.map((s) => s.id)}
+                resolvedYandexQuality={resolvedYandexQuality}
+              />
+            )}
+
+            {step === 'download' && (
+              <DownloadStep
+                t={t}
+                lang={lang}
+                downloads={downloads}
+                logLines={logLines}
+                allDone={
+                  downloads.length > 0 &&
+                  downloads.every(
+                    (d) => d.status === 'done' || d.status === 'failed'
+                  )
+                }
+                anyFailed={downloads.some((d) => d.status === 'failed')}
+                importEnabled={defaultConfig?.import_enabled ?? true}
+                onStartOver={onStartOver}
+                onLogCopy={() =>
+                  navigator.clipboard?.writeText(
+                    logLines.map((l) => l.text).join('\n')
+                  )
+                }
+                onLogClear={() => setLogLines([])}
+              />
+            )}
+          </>
         )}
       </div>
 

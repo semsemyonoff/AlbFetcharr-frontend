@@ -16,8 +16,9 @@ describe('responsive styles.css', () => {
     expect(css).toContain('@media (max-width: 380px)');
   });
 
-  it('does not keep the retired 720px breakpoint', () => {
+  it('does not keep the retired 720px or design-only 860px breakpoints', () => {
     expect(css).not.toContain('max-width: 720px');
+    expect(css).not.toContain('max-width: 860px');
   });
 
   it('provides the table↔cards swap selectors', () => {
@@ -33,6 +34,14 @@ describe('responsive styles.css', () => {
   it('uses the real youtube_music source-badge selector', () => {
     expect(css).toContain('.src-badge.youtube_music');
     expect(css).not.toMatch(/\.src-badge\.youtube\b(?!_)/);
+  });
+
+  it('includes the key settings selectors', () => {
+    expect(css).toContain('.settings-layout');
+    expect(css).toContain('.dl-group');
+    expect(css).toContain('.secret-field');
+    expect(css).toContain('.save-bar');
+    expect(css).toContain('.this-run');
   });
 
   it('styles every download status bucket emitted by the backend', () => {
