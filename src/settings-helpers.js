@@ -207,14 +207,15 @@ export function uiToLibraryMap(text) {
 /**
  * Validate an integer field.
  * Returns an error message string or null.
- * opts.min defaults to 0.
+ * opts.min defaults to 0; opts.max is optional (no upper bound when omitted).
  */
-export function numberError(v, { min = 0 } = {}) {
+export function numberError(v, { min = 0, max } = {}) {
   if (v === '' || v === null || v === undefined) return null;
   const n = Number(v);
   if (!Number.isFinite(n) || isNaN(n)) return 'invalid number';
   if (!Number.isInteger(n)) return 'must be a whole number';
   if (n < min) return `must be at least ${min}`;
+  if (max != null && n > max) return `must be at most ${max}`;
   return null;
 }
 
@@ -255,8 +256,9 @@ export function libraryMapError(text) {
 /**
  * Validate a cover_resolution UI value { number, original }.
  * "original" is always valid; otherwise number must be a positive integer.
+ * opts.max is optional (no upper bound when omitted).
  */
-export function coverResError({ number, original }) {
+export function coverResError({ number, original }, { max } = {}) {
   if (original) return null;
   if (number === '' || number === null || number === undefined)
     return 'enter a size or select Original';
@@ -264,6 +266,40 @@ export function coverResError({ number, original }) {
   if (!Number.isFinite(n) || isNaN(n)) return 'must be a number or Original';
   if (!Number.isInteger(n)) return 'must be a whole number';
   if (n <= 0) return 'size must be a positive number';
+  if (max != null && n > max) return `size must be at most ${max}`;
+  return null;
+}
+
+/**
+ * Minimal validation derived from the backend-provided setting `type`.
+ *
+ * The API tags every setting with a type (str / bool / int / enum /
+ * cover_resolution); this turns that tag into the least-restrictive client
+ * check that can't be wrong:
+ *   - int             → whole number in [opts.min (default 0), opts.max]
+ *   - enum            → must be one of opts.choices (when the catalog knows them)
+ *   - cover_resolution→ positive size ≤ opts.max, or "original"
+ *   - str / bool      → no generic constraint (handled by toggles / specialized
+ *                       validators like urlError / libraryMapError)
+ *
+ * Returns a stable error code ('number' | 'option' | 'cover') the UI maps to a
+ * localized message, or null when valid. Empty/null/undefined is treated as
+ * "no value" (optional / inherits) and never errors.
+ */
+export function typeError(type, value, { min = 0, max, choices } = {}) {
+  if (value === '' || value === null || value === undefined) return null;
+  if (type === 'int') {
+    return numberError(value, { min, max }) ? 'number' : null;
+  }
+  if (type === 'enum') {
+    if (Array.isArray(choices) && choices.length > 0) {
+      return choices.includes(value) ? null : 'option';
+    }
+    return null;
+  }
+  if (type === 'cover_resolution') {
+    return coverResError(coverResToUi(value), { max }) ? 'cover' : null;
+  }
   return null;
 }
 

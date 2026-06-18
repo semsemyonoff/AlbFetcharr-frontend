@@ -215,8 +215,6 @@ export function NumberUnit({
   value,
   unit,
   onChange,
-  min,
-  max,
   disabled,
   error,
   placeholder,
@@ -225,16 +223,18 @@ export function NumberUnit({
     <div
       className={`num-unit${disabled ? ' is-disabled' : ''}${error ? ' invalid' : ''}`}
     >
+      {/* Plain text input (not type="number"): a number input silently coerces
+          non-numeric text to "", so invalid input would never reach the
+          validator and no error could be shown. inputMode="numeric" still
+          surfaces a numeric keypad on mobile; the raw string is validated by
+          typeError() upstream. */}
       <input
-        type="number"
+        type="text"
+        inputMode="numeric"
         value={value ?? ''}
-        min={min}
-        max={max}
         disabled={disabled}
         placeholder={placeholder}
-        onChange={(e) =>
-          onChange(e.target.value === '' ? '' : Number(e.target.value))
-        }
+        onChange={(e) => onChange(e.target.value)}
       />
       {unit && <span className="unit">{unit}</span>}
     </div>
@@ -244,15 +244,16 @@ export function NumberUnit({
 // ── Cover resolution — number input + "Original" toggle ──────────────────────
 // value: { number: number|'', original: bool } (use coverResToUi / uiToCoverRes)
 
-export function CoverResolution({ value, onChange, disabled, t }) {
+export function CoverResolution({ value, onChange, disabled, error, max, t }) {
   const { number, original } = value || { number: '', original: false };
   return (
     <div className="cover-res">
       <input
         type="number"
-        className="set-input"
+        className={`set-input${error ? ' invalid' : ''}`}
         value={number ?? ''}
         min={1}
+        max={max}
         disabled={disabled || original}
         onChange={(e) =>
           onChange({

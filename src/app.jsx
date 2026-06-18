@@ -24,7 +24,13 @@ import {
 } from './accent-helpers.js';
 import { SettingsScreen } from './settings-step.jsx';
 import { ThisRunPanel } from './session-overrides.jsx';
-import { indexSettings, buildOverridesPayload } from './settings-helpers.js';
+import {
+  indexSettings,
+  buildOverridesPayload,
+  typeError,
+  isLosslessYtdlp,
+} from './settings-helpers.js';
+import { SESSION_FIELDS } from './settings-catalog.js';
 
 function nowHHMMSS() {
   const d = new Date();
@@ -566,6 +572,29 @@ export default function App() {
 
     if (toDownload.length === 0) {
       setToastMessage(I18N[lang].select_to_download);
+      return;
+    }
+
+    // Block the download if any "This run" override is invalid — otherwise the
+    // bad value would be sent and rejected by the backend with a 422.
+    // ytdlp_quality is inactive (and its error hidden in the panel) when the
+    // effective format is lossless, so skip it to match what the user can see.
+    const effectiveFormat =
+      runOverrides.ytdlp_format ?? committedSettings.ytdlp_format?.value;
+    const qualityInactive = isLosslessYtdlp(effectiveFormat);
+    const sessionInvalid = SESSION_FIELDS.some((f) => {
+      if (f.key === 'ytdlp_quality' && qualityInactive) return false;
+      const item = committedSettings[f.key];
+      const val = runOverrides[f.key];
+      if (!item || val === undefined) return false;
+      return !!typeError(item.type, val, {
+        min: f.min,
+        max: f.max,
+        choices: (f.choices || []).map((c) => c.value),
+      });
+    });
+    if (sessionInvalid) {
+      setToastMessage(I18N[lang].fix_session_settings);
       return;
     }
 

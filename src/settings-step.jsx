@@ -14,6 +14,7 @@ import { Icon } from './icons';
 import { I18N_FNS } from './i18n';
 import {
   SETTINGS_SECTIONS,
+  SETTINGS_FIELDS,
   fieldsForSection,
   fieldsForGroup,
 } from './settings-catalog';
@@ -31,9 +32,8 @@ import {
   libraryMapToUi,
   uiToLibraryMap,
   libraryMapError,
-  numberError,
   urlError,
-  coverResError,
+  typeError,
 } from './settings-helpers';
 import {
   Field,
@@ -119,30 +119,31 @@ export function SettingsScreen({
 
   // ── Validation ─────────────────────────────────────────────────────────────
 
+  // Localized messages for the type-derived error codes from typeError().
+  const errMsg = useMemo(
+    () => ({ number: t.err_number, option: t.err_option, cover: t.err_cover }),
+    [t]
+  );
+
   const errors = useMemo(() => {
     const errs = {};
 
-    const urlVal = effVal('lidarr_url');
-    if (urlError(urlVal)) errs.lidarr_url = t.err_url;
-
+    // Specialized string validators — stricter than the bare `str` type.
+    if (urlError(effVal('lidarr_url'))) errs.lidarr_url = t.err_url;
     if (libraryMapError(libMapText)) errs.library_map = t.err_map;
 
-    const numFields = [
-      { key: 'ytdlp_quality', min: 0 },
-      { key: 'yandex_delay', min: 0 },
-      { key: 'yandex_net_timeout', min: 1 },
-      { key: 'yandex_net_tries', min: 1 },
-      { key: 'yandex_net_retry_delay', min: 0 },
-      { key: 'ytdlp_retries', min: 1 },
-    ];
-    for (const { key, min } of numFields) {
-      if (numberError(effVal(key), { min })) errs[key] = t.err_number;
+    // Minimal validation derived from the backend-provided type for every
+    // surfaced field (int bounds, enum membership, cover_resolution shape).
+    for (const field of SETTINGS_FIELDS) {
+      const item = committed[field.key];
+      if (!item) continue;
+      const code = typeError(item.type, effVal(field.key), {
+        min: field.min,
+        max: field.max,
+        choices: (field.choices || []).map((c) => c.value),
+      });
+      if (code) errs[field.key] = errMsg[code] ?? t.err_number;
     }
-
-    const coverErr = coverResError(
-      coverResToUi(effVal('yandex_cover_resolution'))
-    );
-    if (coverErr) errs.yandex_cover_resolution = coverErr;
 
     return errs;
     // eslint-disable-next-line react-hooks/exhaustive-deps
@@ -326,7 +327,6 @@ export function SettingsScreen({
           <NumberUnit
             value={lossless ? '' : (value ?? '')}
             unit={unit}
-            min={0}
             disabled={lossless}
             error={!lossless && !!error}
             onChange={(n) => onChange(n === '' ? '' : String(n))}
@@ -351,6 +351,8 @@ export function SettingsScreen({
           <CoverResolution
             value={coverVal}
             t={t}
+            error={!!error}
+            max={field.max}
             onChange={(uiVal) => onChange(uiToCoverRes(uiVal))}
           />
         </Field>
@@ -438,6 +440,7 @@ export function SettingsScreen({
   const advYandexFields = fieldsForGroup('advanced', 'adv-yandex');
   const advYtdlpFields = fieldsForGroup('advanced', 'adv-ytdlp');
   const advNetworkFields = fieldsForGroup('advanced', 'adv-network');
+  const advAppFields = fieldsForGroup('advanced', 'adv-app');
 
   return (
     <>
@@ -763,7 +766,6 @@ export function SettingsScreen({
                           <NumberUnit
                             value={lossless ? '' : (value ?? '')}
                             unit={unit}
-                            min={0}
                             disabled={lossless}
                             error={!lossless && !!errors[field.key]}
                             onChange={(n) =>
@@ -843,6 +845,19 @@ export function SettingsScreen({
                     {advNetworkFields.map(renderField)}
                   </div>
                 </div>
+
+                {/* Application (server-wide) */}
+                {advAppFields.length > 0 && (
+                  <div className="dl-group">
+                    <div className="dl-group-head">
+                      <span className="gh-dot"></span>
+                      <span className="gh-name">{t.dl_group_general}</span>
+                    </div>
+                    <div className="field-grid">
+                      {advAppFields.map(renderField)}
+                    </div>
+                  </div>
+                )}
               </div>
             )}
           </section>

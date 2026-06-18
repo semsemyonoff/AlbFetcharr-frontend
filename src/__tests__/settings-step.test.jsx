@@ -69,14 +69,17 @@ function makeCommitted(overrides = {}) {
     }),
     library_map: makeItem('library_map', { value: null, source: 'default' }),
     yandex_quality: makeItem('yandex_quality', {
+      type: 'enum',
       value: '2',
       source: 'default',
     }),
     yandex_lyrics_format: makeItem('yandex_lyrics_format', {
+      type: 'enum',
       value: 'none',
       source: 'default',
     }),
     yandex_cover_resolution: makeItem('yandex_cover_resolution', {
+      type: 'cover_resolution',
       value: '600',
       source: 'default',
     }),
@@ -106,19 +109,23 @@ function makeCommitted(overrides = {}) {
       source: 'default',
     }),
     ytdlp_format: makeItem('ytdlp_format', {
+      type: 'enum',
       value: 'flac',
       source: 'default',
     }),
     ytdlp_quality: makeItem('ytdlp_quality', {
+      type: 'int',
       value: '320',
       source: 'default',
     }),
     yandex_path_pattern: makeItem('yandex_path_pattern'),
     yandex_delay: makeItem('yandex_delay', {
+      type: 'int',
       value: '0',
       source: 'default',
     }),
     yandex_compat_level: makeItem('yandex_compat_level', {
+      type: 'enum',
       value: '0',
       source: 'default',
     }),
@@ -129,20 +136,29 @@ function makeCommitted(overrides = {}) {
     }),
     ytdlp_path_pattern: makeItem('ytdlp_path_pattern'),
     ytdlp_retries: makeItem('ytdlp_retries', {
+      type: 'int',
       value: '3',
       source: 'default',
     }),
     yandex_net_timeout: makeItem('yandex_net_timeout', {
+      type: 'int',
       value: '30',
       source: 'default',
     }),
     yandex_net_tries: makeItem('yandex_net_tries', {
+      type: 'int',
       value: '3',
       source: 'default',
     }),
     yandex_net_retry_delay: makeItem('yandex_net_retry_delay', {
+      type: 'int',
       value: '5',
       source: 'default',
+    }),
+    app_log_level: makeItem('app_log_level', {
+      type: 'enum',
+      value: 'INFO',
+      source: 'env',
     }),
   };
   return { ...base, ...overrides };
@@ -376,22 +392,23 @@ describe('SettingsScreen — validation', () => {
     expect(errEl.textContent).toContain(t.err_url);
   });
 
-  it('invalid number in a number field disables Save', () => {
+  it('invalid (non-numeric) input in a number field disables Save', () => {
     const { container } = renderScreen();
 
     // Open advanced section so number fields are rendered
     const advBtn = container.querySelector('.adv-toggle');
     fireEvent.click(advBtn);
 
-    // Find any number input in the settings body (yandex_delay etc.)
+    // Find any number field in the settings body (yandex_delay etc.).
+    // These are text inputs (not type="number") so invalid text reaches
+    // the validator instead of being silently coerced to "".
     const numInputs = container.querySelectorAll(
-      '.set-section-body input[type="number"]'
+      '.set-section-body .num-unit input'
     );
-    if (numInputs.length > 0) {
-      fireEvent.change(numInputs[0], { target: { value: '-5' } });
-      expect(container.querySelector('.save-bar')).toBeTruthy();
-      expect(container.querySelector('.btn.btn-primary').disabled).toBe(true);
-    }
+    expect(numInputs.length).toBeGreaterThan(0);
+    fireEvent.change(numInputs[0], { target: { value: 'abc' } });
+    expect(container.querySelector('.save-bar')).toBeTruthy();
+    expect(container.querySelector('.btn.btn-primary').disabled).toBe(true);
   });
 
   it('clearing an invalid field re-enables Save', () => {

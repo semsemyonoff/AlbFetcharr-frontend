@@ -20,6 +20,7 @@ import {
   coverResToUi,
   uiToCoverRes,
   isLosslessYtdlp,
+  typeError,
 } from './settings-helpers';
 import {
   Segmented,
@@ -58,11 +59,30 @@ export function ThisRunPanel({ t, committed, overrides, setOverrides }) {
   // Plain render helpers — not React components — to avoid remounting on
   // re-render, which would make fireEvent DOM references stale.
 
+  const ERR_MSG = {
+    number: t.err_number,
+    option: t.err_option,
+    cover: t.err_cover,
+  };
+
   const renderField = (field) => {
     const { key, control, choices, labelKey, unit } = field;
     const label = t[labelKey] ?? labelKey;
     const unitLabel = unit ? t[unit] : undefined;
     const ov = isOverridden(key);
+
+    // Minimal type-derived validation (same rules as the global screen).
+    // A disabled quality field (lossless format) is never flagged.
+    const numericDisabled = key === 'ytdlp_quality' && qualityDisabled;
+    const errCode =
+      committed[key] && !numericDisabled
+        ? typeError(committed[key].type, runVal(key), {
+            min: field.min,
+            max: field.max,
+            choices: (choices || []).map((c) => c.value),
+          })
+        : null;
+    const errText = errCode ? (ERR_MSG[errCode] ?? t.err_number) : null;
 
     if (control === 'toggle') {
       return (
@@ -115,13 +135,12 @@ export function ThisRunPanel({ t, committed, overrides, setOverrides }) {
       }
 
       if (control === 'number') {
-        const disabled = key === 'ytdlp_quality' && qualityDisabled;
         return (
           <NumberUnit
             value={runVal(key) ?? ''}
             unit={unitLabel}
-            min={0}
-            disabled={disabled}
+            disabled={numericDisabled}
+            error={!!errCode}
             onChange={(v) => setRun(key, v === '' ? '' : String(v))}
           />
         );
@@ -132,6 +151,8 @@ export function ThisRunPanel({ t, committed, overrides, setOverrides }) {
           <CoverResolution
             value={coverResToUi(runVal(key))}
             t={t}
+            error={!!errCode}
+            max={field.max}
             onChange={(uiVal) => setRun(key, uiToCoverRes(uiVal))}
           />
         );
@@ -159,6 +180,12 @@ export function ThisRunPanel({ t, committed, overrides, setOverrides }) {
           )}
         </div>
         <div className="field-control">{fieldJsx}</div>
+        {errText && (
+          <div className="field-error">
+            <Icon name="alert" size={13} />
+            <span>{errText}</span>
+          </div>
+        )}
       </div>
     );
   };

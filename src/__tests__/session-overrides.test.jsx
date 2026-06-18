@@ -27,9 +27,13 @@ function makeItem(key, value, extra = {}) {
 
 function makeCommitted(overrides = {}) {
   const base = {
-    yandex_quality: makeItem('yandex_quality', '2'),
-    yandex_lyrics_format: makeItem('yandex_lyrics_format', 'none'),
-    yandex_cover_resolution: makeItem('yandex_cover_resolution', '600'),
+    yandex_quality: makeItem('yandex_quality', '2', { type: 'enum' }),
+    yandex_lyrics_format: makeItem('yandex_lyrics_format', 'none', {
+      type: 'enum',
+    }),
+    yandex_cover_resolution: makeItem('yandex_cover_resolution', '600', {
+      type: 'cover_resolution',
+    }),
     yandex_embed_cover: makeItem('yandex_embed_cover', '1', { type: 'bool' }),
     yandex_skip_existing: makeItem('yandex_skip_existing', '0', {
       type: 'bool',
@@ -41,8 +45,8 @@ function makeCommitted(overrides = {}) {
     yandex_clear_comments: makeItem('yandex_clear_comments', '0', {
       type: 'bool',
     }),
-    ytdlp_format: makeItem('ytdlp_format', 'mp3'),
-    ytdlp_quality: makeItem('ytdlp_quality', '320'),
+    ytdlp_format: makeItem('ytdlp_format', 'mp3', { type: 'enum' }),
+    ytdlp_quality: makeItem('ytdlp_quality', '320', { type: 'int' }),
   };
   return { ...base, ...overrides };
 }
@@ -424,6 +428,58 @@ describe('all session fields rendered', () => {
       );
       expect(found, `label for ${labelKey} not found`).toBeTruthy();
     }
+  });
+});
+
+// ── Validation (type + bounds) ────────────────────────────────────────────────
+
+describe('validation', () => {
+  it('flags non-numeric input in ytdlp_quality', () => {
+    const { container } = renderOpen();
+    expect(container.querySelector('.field-error')).toBeNull();
+
+    const input = container.querySelector('.num-unit input');
+    fireEvent.change(input, { target: { value: 'abc' } });
+    expect(container.querySelector('.field-error')).toBeTruthy();
+    expect(container.querySelector('.num-unit.invalid')).toBeTruthy();
+  });
+
+  it('flags ytdlp_quality above the max bound', () => {
+    const { container } = renderOpen();
+    const input = container.querySelector('.num-unit input');
+    fireEvent.change(input, { target: { value: '5000' } });
+    expect(container.querySelector('.field-error')).toBeTruthy();
+  });
+
+  it('accepts a valid ytdlp_quality with no error', () => {
+    const { container } = renderOpen();
+    const input = container.querySelector('.num-unit input');
+    fireEvent.change(input, { target: { value: '256' } });
+    expect(container.querySelector('.field-error')).toBeNull();
+  });
+
+  it('does not flag a disabled (lossless) quality field', () => {
+    const { container } = renderOpen(makeCommitted(), { ytdlp_format: 'flac' });
+    // quality is disabled; even though committed value exists, no error shows
+    expect(container.querySelector('.field-error')).toBeNull();
+  });
+
+  it('flags a negative cover resolution', () => {
+    const { container } = renderOpen();
+    const coverInput = container.querySelector(
+      '.cover-res input[type="number"]'
+    );
+    fireEvent.change(coverInput, { target: { value: '-5' } });
+    expect(container.querySelector('.field-error')).toBeTruthy();
+  });
+
+  it('flags a cover resolution above the max bound', () => {
+    const { container } = renderOpen();
+    const coverInput = container.querySelector(
+      '.cover-res input[type="number"]'
+    );
+    fireEvent.change(coverInput, { target: { value: '20000' } });
+    expect(container.querySelector('.field-error')).toBeTruthy();
   });
 });
 

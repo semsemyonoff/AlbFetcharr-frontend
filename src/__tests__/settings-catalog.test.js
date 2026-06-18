@@ -55,6 +55,8 @@ const BACKEND_REGISTRY_KEYS = new Set([
   // Tier 4 — UI prefs (intentionally not surfaced in settings screen)
   'default_lang',
   'default_theme',
+  // Server-wide
+  'app_log_level',
 ]);
 
 // Exactly the session-scoped keys from registry.py (scope == "session")

@@ -51,6 +51,16 @@ export const COMPAT_LEVEL_CHOICES = [
   { value: '1', label: '1' },
 ];
 
+// ── Log level choices (Python logging levels) ────────────────────────────────
+
+export const LOG_LEVEL_CHOICES = [
+  { value: 'DEBUG', label: 'DEBUG' },
+  { value: 'INFO', label: 'INFO' },
+  { value: 'WARNING', label: 'WARNING' },
+  { value: 'ERROR', label: 'ERROR' },
+  { value: 'CRITICAL', label: 'CRITICAL' },
+];
+
 // ── Main settings fields catalog ─────────────────────────────────────────────
 //
 // Each entry: { key, control, labelKey, section, group, sourceCard?,
@@ -177,6 +187,7 @@ export const SETTINGS_FIELDS = [
     key: 'yandex_cover_resolution',
     control: 'coverResolution',
     labelKey: 'dl_cover_res',
+    max: 10000,
     section: 'download',
     group: 'dl-yandex',
   },
@@ -230,6 +241,8 @@ export const SETTINGS_FIELDS = [
     control: 'number',
     labelKey: 'dl_ytdlp_quality',
     unit: 'units_kbps',
+    min: 0,
+    max: 2000,
     section: 'download',
     group: 'dl-ytdlp',
   },
@@ -247,6 +260,8 @@ export const SETTINGS_FIELDS = [
     control: 'number',
     labelKey: 'adv_request_delay',
     unit: 'units_s',
+    min: 0,
+    max: 600,
     section: 'advanced',
     group: 'adv-yandex',
   },
@@ -279,6 +294,8 @@ export const SETTINGS_FIELDS = [
     key: 'ytdlp_retries',
     control: 'number',
     labelKey: 'adv_ytdlp_retries',
+    min: 1,
+    max: 100,
     section: 'advanced',
     group: 'adv-ytdlp',
   },
@@ -299,6 +316,8 @@ export const SETTINGS_FIELDS = [
     control: 'number',
     labelKey: 'adv_timeout',
     unit: 'units_s',
+    min: 1,
+    max: 600,
     section: 'advanced',
     group: 'adv-network',
   },
@@ -306,6 +325,8 @@ export const SETTINGS_FIELDS = [
     key: 'yandex_net_tries',
     control: 'number',
     labelKey: 'adv_tries',
+    min: 1,
+    max: 100,
     section: 'advanced',
     group: 'adv-network',
   },
@@ -314,8 +335,21 @@ export const SETTINGS_FIELDS = [
     control: 'number',
     labelKey: 'adv_retry_delay',
     unit: 'units_s',
+    min: 0,
+    max: 600,
     section: 'advanced',
     group: 'adv-network',
+  },
+
+  // ── Advanced — Application (server-wide) ──────────────────────────────────
+  {
+    key: 'app_log_level',
+    control: 'select',
+    labelKey: 'adv_log_level',
+    choices: LOG_LEVEL_CHOICES,
+    hintKey: 'adv_log_level_hint',
+    section: 'advanced',
+    group: 'adv-app',
   },
 ];
 
@@ -344,6 +378,7 @@ export const SESSION_FIELDS = [
     key: 'yandex_cover_resolution',
     control: 'coverResolution',
     labelKey: 'dl_cover_res',
+    max: 10000,
     group: 'session-yandex',
   },
   {
@@ -390,6 +425,8 @@ export const SESSION_FIELDS = [
     control: 'number',
     labelKey: 'dl_ytdlp_quality',
     unit: 'units_kbps',
+    min: 0,
+    max: 2000,
     group: 'session-ytdlp',
   },
 ];

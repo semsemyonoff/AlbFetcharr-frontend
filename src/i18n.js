@@ -91,6 +91,7 @@ export const I18N = {
     just_now: 'just now',
     searching_title: 'Searching…',
     select_to_download: 'Select albums to download',
+    fix_session_settings: 'Fix the highlighted “This run” settings first',
     download_other_tab:
       'Download is already being watched in another tab — close it to take over',
     download_running_server: 'A download is already running on the server',
@@ -192,11 +193,15 @@ export const I18N = {
     adv_compat: 'Compatibility level',
     adv_cookies: 'Cookies file path',
     adv_cookies_note: 'Shared by YouTube and SoundCloud downloads.',
+    adv_log_level: 'Log level',
+    adv_log_level_hint: 'Verbosity of the backend server logs.',
     show_advanced: 'Show advanced',
     hide_advanced: 'Hide advanced',
     err_number: 'Enter a valid number',
     err_map: 'Each line must be path = path',
     err_url: 'Enter a valid http(s) URL',
+    err_option: 'Select a valid option',
+    err_cover: 'Enter a valid size or select Original',
     this_run: 'This run',
     this_run_open: 'Override for this run',
     this_run_banner:
@@ -300,6 +305,8 @@ export const I18N = {
     just_now: 'только что',
     searching_title: 'Идёт поиск…',
     select_to_download: 'Выберите альбомы для загрузки',
+    fix_session_settings:
+      'Сначала исправьте отмеченные настройки «Этот запуск»',
     download_other_tab:
       'Загрузка уже открыта в другой вкладке — закройте её чтобы продолжить',
     download_running_server: 'Загрузка уже запущена на сервере',
@@ -402,11 +409,15 @@ export const I18N = {
     adv_compat: 'Уровень совместимости',
     adv_cookies: 'Путь к файлу cookies',
     adv_cookies_note: 'Используется загрузками YouTube и SoundCloud.',
+    adv_log_level: 'Уровень логирования',
+    adv_log_level_hint: 'Подробность логов серверной части.',
     show_advanced: 'Показать дополнительно',
     hide_advanced: 'Скрыть дополнительно',
     err_number: 'Введите корректное число',
     err_map: 'Каждая строка — путь = путь',
     err_url: 'Введите корректный http(s) URL',
+    err_option: 'Выберите допустимое значение',
+    err_cover: 'Укажите корректный размер или выберите «Оригинал»',
     this_run: 'Этот запуск',
     this_run_open: 'Изменить для этого запуска',
     this_run_banner:
