@@ -164,7 +164,6 @@ function mapBackendAlbum(album) {
           Math.floor((Date.now() - new Date(album.added).getTime()) / 86400000)
         )
       : 0,
-    status: album.status || 'missing',
     root_folder: album.root_folder,
   };
 }
