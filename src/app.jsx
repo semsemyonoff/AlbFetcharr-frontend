@@ -43,6 +43,7 @@ const Header = ({
   lastSync,
   inSettings,
   onSettingsToggle,
+  onHome,
 }) => {
   const cycleTheme = () => {
     if (theme === 'system') setTheme('light');
@@ -52,7 +53,20 @@ const Header = ({
 
   return (
     <header className="appbar">
-      <div className="brand">
+      <div
+        className="brand"
+        role="button"
+        tabIndex={0}
+        aria-label={t.go_home}
+        title={t.go_home}
+        onClick={onHome}
+        onKeyDown={(e) => {
+          if (e.key === 'Enter' || e.key === ' ') {
+            e.preventDefault();
+            onHome();
+          }
+        }}
+      >
         <div className="brand-logo" aria-hidden="true"></div>
         <div>
           <h1 className="brand-name">
@@ -779,6 +793,7 @@ export default function App() {
           onSettingsToggle={() =>
             setView((v) => (v === 'settings' ? 'app' : 'settings'))
           }
+          onHome={() => setView('app')}
         />
 
         {view === 'settings' && (

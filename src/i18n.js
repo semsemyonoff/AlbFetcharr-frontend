@@ -2,6 +2,7 @@ export const I18N = {
   en: {
     appName: 'AlbFetcharr',
     tagline: 'Fetch missing albums from your Lidarr library',
+    go_home: 'Back to library',
     lidarr_connected: 'Lidarr connected',
     lidarr_syncing: 'Syncing',
     lidarr_error: 'Lidarr offline',
@@ -210,6 +211,7 @@ export const I18N = {
   ru: {
     appName: 'AlbFetcharr',
     tagline: 'Качаем недостающие альбомы для библиотеки Lidarr',
+    go_home: 'К библиотеке',
     lidarr_connected: 'Lidarr подключён',
     lidarr_syncing: 'Синхронизация',
     lidarr_error: 'Lidarr недоступен',
