@@ -208,6 +208,51 @@ export default function App() {
   const [view, setView] = React.useState('app');
   const [runOverrides, setRunOverrides] = React.useState({});
 
+  // Lidarr fetch state
+  const [fetchState, setFetchState] = React.useState('loading');
+  const [albums, setAlbums] = React.useState([]);
+  const [lastSync, setLastSync] = React.useState('');
+  const [availableSources, setAvailableSources] = React.useState([]);
+
+  const runFetch = React.useCallback(async () => {
+    setFetchState('loading');
+    try {
+      const response = await fetch('/api/wanted');
+      if (!response.ok) {
+        setFetchState('error');
+        return;
+      }
+      const data = await response.json();
+
+      if (!Array.isArray(data) || data.length === 0) {
+        setFetchState('empty');
+        setAlbums([]);
+      } else {
+        const mapped = data.map((album) => mapBackendAlbum(album));
+        setAlbums(mapped);
+        setFetchState('ready');
+        setLastSync(I18N[lang].just_now);
+      }
+    } catch (err) {
+      console.error('Failed to fetch wanted albums:', err);
+      setFetchState('error');
+    }
+  }, [lang]);
+
+  const fetchSources = React.useCallback(async () => {
+    try {
+      const response = await fetch('/api/sources');
+      if (response.ok) {
+        const data = await response.json();
+        if (Array.isArray(data)) {
+          setAvailableSources(data);
+        }
+      }
+    } catch (err) {
+      console.error('Failed to fetch sources:', err);
+    }
+  }, []);
+
   const reloadSettings = React.useCallback(async () => {
     try {
       const res = await fetch('/api/settings');
@@ -242,9 +287,12 @@ export default function App() {
           throw new Error(data.error || data.detail || `HTTP ${res.status}`);
         }
       }
-      await reloadSettings();
+      // Refresh committed settings and the provider list together: provider
+      // enable/disable toggles live in settings, so the main page must reflect
+      // them without a full page reload. Both calls swallow their own errors.
+      await Promise.all([reloadSettings(), fetchSources()]);
     },
-    [reloadSettings]
+    [reloadSettings, fetchSources]
   );
 
   React.useEffect(() => {
@@ -324,51 +372,6 @@ export default function App() {
   };
 
   const t = I18N[lang];
-
-  // Lidarr fetch state
-  const [fetchState, setFetchState] = React.useState('loading');
-  const [albums, setAlbums] = React.useState([]);
-  const [lastSync, setLastSync] = React.useState('');
-  const [availableSources, setAvailableSources] = React.useState([]);
-
-  const runFetch = React.useCallback(async () => {
-    setFetchState('loading');
-    try {
-      const response = await fetch('/api/wanted');
-      if (!response.ok) {
-        setFetchState('error');
-        return;
-      }
-      const data = await response.json();
-
-      if (!Array.isArray(data) || data.length === 0) {
-        setFetchState('empty');
-        setAlbums([]);
-      } else {
-        const mapped = data.map((album) => mapBackendAlbum(album));
-        setAlbums(mapped);
-        setFetchState('ready');
-        setLastSync(I18N[lang].just_now);
-      }
-    } catch (err) {
-      console.error('Failed to fetch wanted albums:', err);
-      setFetchState('error');
-    }
-  }, [lang]);
-
-  const fetchSources = React.useCallback(async () => {
-    try {
-      const response = await fetch('/api/sources');
-      if (response.ok) {
-        const data = await response.json();
-        if (Array.isArray(data)) {
-          setAvailableSources(data);
-        }
-      }
-    } catch (err) {
-      console.error('Failed to fetch sources:', err);
-    }
-  }, []);
 
   React.useEffect(() => {
     // Initial data load on mount. runFetch sets a synchronous loading state —
