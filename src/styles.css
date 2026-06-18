@@ -142,6 +142,12 @@ textarea {
   display: flex;
   align-items: center;
   gap: 12px;
+  cursor: pointer;
+  border-radius: 10px;
+  outline-offset: 2px;
+}
+.brand:focus-visible {
+  outline: 2px solid var(--accent-blue);
 }
 .brand-logo {
   width: 40px;

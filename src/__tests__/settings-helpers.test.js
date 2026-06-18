@@ -18,6 +18,7 @@ import {
   urlError,
   libraryMapError,
   coverResError,
+  typeError,
   buildOverridesPayload,
 } from '../settings-helpers';
 
@@ -427,6 +428,15 @@ describe('numberError', () => {
     expect(numberError('0')).toBeNull();
     expect(numberError('-1')).not.toBeNull();
   });
+
+  it('returns error when above max', () => {
+    expect(numberError('11', { max: 10 })).not.toBeNull();
+    expect(numberError('10', { max: 10 })).toBeNull();
+  });
+
+  it('has no upper bound when max is omitted', () => {
+    expect(numberError('999999')).toBeNull();
+  });
 });
 
 // ── urlError ──────────────────────────────────────────────────────────────────
@@ -517,6 +527,82 @@ describe('coverResError', () => {
 
   it('returns error for NaN', () => {
     expect(coverResError({ number: NaN, original: false })).not.toBeNull();
+  });
+
+  it('returns error when above max', () => {
+    expect(
+      coverResError({ number: 20000, original: false }, { max: 10000 })
+    ).not.toBeNull();
+    expect(
+      coverResError({ number: 10000, original: false }, { max: 10000 })
+    ).toBeNull();
+  });
+
+  it('original bypasses the max bound', () => {
+    expect(
+      coverResError({ number: '', original: true }, { max: 10000 })
+    ).toBeNull();
+  });
+});
+
+// ── typeError ─────────────────────────────────────────────────────────────────
+
+describe('typeError', () => {
+  it('treats empty / null / undefined as no value (no error) for any type', () => {
+    expect(typeError('int', '')).toBeNull();
+    expect(typeError('int', null)).toBeNull();
+    expect(typeError('int', undefined)).toBeNull();
+    expect(typeError('enum', '', { choices: ['a'] })).toBeNull();
+    expect(typeError('cover_resolution', '')).toBeNull();
+  });
+
+  it('returns null for str and bool types (no generic constraint)', () => {
+    expect(typeError('str', 'anything')).toBeNull();
+    expect(typeError('bool', '1')).toBeNull();
+    expect(typeError('bool', '0')).toBeNull();
+  });
+
+  it('int: accepts whole numbers, rejects non-integers and non-numbers', () => {
+    expect(typeError('int', '5')).toBeNull();
+    expect(typeError('int', '0')).toBeNull();
+    expect(typeError('int', 'abc')).toBe('number');
+    expect(typeError('int', '1.5')).toBe('number');
+  });
+
+  it('int: honors a minimum bound', () => {
+    expect(typeError('int', '0', { min: 1 })).toBe('number');
+    expect(typeError('int', '1', { min: 1 })).toBeNull();
+    expect(typeError('int', '-1')).toBe('number');
+  });
+
+  it('int: honors a maximum bound', () => {
+    expect(typeError('int', '2001', { max: 2000 })).toBe('number');
+    expect(typeError('int', '2000', { max: 2000 })).toBeNull();
+  });
+
+  it('cover_resolution: honors a maximum bound', () => {
+    expect(typeError('cover_resolution', '20000', { max: 10000 })).toBe(
+      'cover'
+    );
+    expect(typeError('cover_resolution', '10000', { max: 10000 })).toBeNull();
+  });
+
+  it('enum: requires membership when choices are known', () => {
+    const choices = ['INFO', 'DEBUG', 'ERROR'];
+    expect(typeError('enum', 'INFO', { choices })).toBeNull();
+    expect(typeError('enum', 'TRACE', { choices })).toBe('option');
+  });
+
+  it('enum: skips the check when choices are absent or empty', () => {
+    expect(typeError('enum', 'whatever')).toBeNull();
+    expect(typeError('enum', 'whatever', { choices: [] })).toBeNull();
+  });
+
+  it('cover_resolution: accepts "original" and positive sizes, rejects junk', () => {
+    expect(typeError('cover_resolution', 'original')).toBeNull();
+    expect(typeError('cover_resolution', '600')).toBeNull();
+    expect(typeError('cover_resolution', '0')).toBe('cover');
+    expect(typeError('cover_resolution', 'abc')).toBe('cover');
   });
 });
 

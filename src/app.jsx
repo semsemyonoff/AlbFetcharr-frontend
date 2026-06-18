@@ -24,7 +24,13 @@ import {
 } from './accent-helpers.js';
 import { SettingsScreen } from './settings-step.jsx';
 import { ThisRunPanel } from './session-overrides.jsx';
-import { indexSettings, buildOverridesPayload } from './settings-helpers.js';
+import {
+  indexSettings,
+  buildOverridesPayload,
+  typeError,
+  isLosslessYtdlp,
+} from './settings-helpers.js';
+import { SESSION_FIELDS } from './settings-catalog.js';
 
 function nowHHMMSS() {
   const d = new Date();
@@ -43,6 +49,7 @@ const Header = ({
   lastSync,
   inSettings,
   onSettingsToggle,
+  onHome,
 }) => {
   const cycleTheme = () => {
     if (theme === 'system') setTheme('light');
@@ -52,7 +59,20 @@ const Header = ({
 
   return (
     <header className="appbar">
-      <div className="brand">
+      <div
+        className="brand"
+        role="button"
+        tabIndex={0}
+        aria-label={t.go_home}
+        title={t.go_home}
+        onClick={onHome}
+        onKeyDown={(e) => {
+          if (e.key === 'Enter' || e.key === ' ') {
+            e.preventDefault();
+            onHome();
+          }
+        }}
+      >
         <div className="brand-logo" aria-hidden="true"></div>
         <div>
           <h1 className="brand-name">
@@ -164,7 +184,6 @@ function mapBackendAlbum(album) {
           Math.floor((Date.now() - new Date(album.added).getTime()) / 86400000)
         )
       : 0,
-    status: album.status || 'missing',
     root_folder: album.root_folder,
   };
 }
@@ -194,6 +213,51 @@ export default function App() {
   const [committedSettings, setCommittedSettings] = React.useState({});
   const [view, setView] = React.useState('app');
   const [runOverrides, setRunOverrides] = React.useState({});
+
+  // Lidarr fetch state
+  const [fetchState, setFetchState] = React.useState('loading');
+  const [albums, setAlbums] = React.useState([]);
+  const [lastSync, setLastSync] = React.useState('');
+  const [availableSources, setAvailableSources] = React.useState([]);
+
+  const runFetch = React.useCallback(async () => {
+    setFetchState('loading');
+    try {
+      const response = await fetch('/api/wanted');
+      if (!response.ok) {
+        setFetchState('error');
+        return;
+      }
+      const data = await response.json();
+
+      if (!Array.isArray(data) || data.length === 0) {
+        setFetchState('empty');
+        setAlbums([]);
+      } else {
+        const mapped = data.map((album) => mapBackendAlbum(album));
+        setAlbums(mapped);
+        setFetchState('ready');
+        setLastSync(I18N[lang].just_now);
+      }
+    } catch (err) {
+      console.error('Failed to fetch wanted albums:', err);
+      setFetchState('error');
+    }
+  }, [lang]);
+
+  const fetchSources = React.useCallback(async () => {
+    try {
+      const response = await fetch('/api/sources');
+      if (response.ok) {
+        const data = await response.json();
+        if (Array.isArray(data)) {
+          setAvailableSources(data);
+        }
+      }
+    } catch (err) {
+      console.error('Failed to fetch sources:', err);
+    }
+  }, []);
 
   const reloadSettings = React.useCallback(async () => {
     try {
@@ -229,9 +293,12 @@ export default function App() {
           throw new Error(data.error || data.detail || `HTTP ${res.status}`);
         }
       }
-      await reloadSettings();
+      // Refresh committed settings and the provider list together: provider
+      // enable/disable toggles live in settings, so the main page must reflect
+      // them without a full page reload. Both calls swallow their own errors.
+      await Promise.all([reloadSettings(), fetchSources()]);
     },
-    [reloadSettings]
+    [reloadSettings, fetchSources]
   );
 
   React.useEffect(() => {
@@ -311,51 +378,6 @@ export default function App() {
   };
 
   const t = I18N[lang];
-
-  // Lidarr fetch state
-  const [fetchState, setFetchState] = React.useState('loading');
-  const [albums, setAlbums] = React.useState([]);
-  const [lastSync, setLastSync] = React.useState('');
-  const [availableSources, setAvailableSources] = React.useState([]);
-
-  const runFetch = React.useCallback(async () => {
-    setFetchState('loading');
-    try {
-      const response = await fetch('/api/wanted');
-      if (!response.ok) {
-        setFetchState('error');
-        return;
-      }
-      const data = await response.json();
-
-      if (!Array.isArray(data) || data.length === 0) {
-        setFetchState('empty');
-        setAlbums([]);
-      } else {
-        const mapped = data.map((album) => mapBackendAlbum(album));
-        setAlbums(mapped);
-        setFetchState('ready');
-        setLastSync(I18N[lang].just_now);
-      }
-    } catch (err) {
-      console.error('Failed to fetch wanted albums:', err);
-      setFetchState('error');
-    }
-  }, [lang]);
-
-  const fetchSources = React.useCallback(async () => {
-    try {
-      const response = await fetch('/api/sources');
-      if (response.ok) {
-        const data = await response.json();
-        if (Array.isArray(data)) {
-          setAvailableSources(data);
-        }
-      }
-    } catch (err) {
-      console.error('Failed to fetch sources:', err);
-    }
-  }, []);
 
   React.useEffect(() => {
     // Initial data load on mount. runFetch sets a synchronous loading state —
@@ -550,6 +572,29 @@ export default function App() {
 
     if (toDownload.length === 0) {
       setToastMessage(I18N[lang].select_to_download);
+      return;
+    }
+
+    // Block the download if any "This run" override is invalid — otherwise the
+    // bad value would be sent and rejected by the backend with a 422.
+    // ytdlp_quality is inactive (and its error hidden in the panel) when the
+    // effective format is lossless, so skip it to match what the user can see.
+    const effectiveFormat =
+      runOverrides.ytdlp_format ?? committedSettings.ytdlp_format?.value;
+    const qualityInactive = isLosslessYtdlp(effectiveFormat);
+    const sessionInvalid = SESSION_FIELDS.some((f) => {
+      if (f.key === 'ytdlp_quality' && qualityInactive) return false;
+      const item = committedSettings[f.key];
+      const val = runOverrides[f.key];
+      if (!item || val === undefined) return false;
+      return !!typeError(item.type, val, {
+        min: f.min,
+        max: f.max,
+        choices: (f.choices || []).map((c) => c.value),
+      });
+    });
+    if (sessionInvalid) {
+      setToastMessage(I18N[lang].fix_session_settings);
       return;
     }
 
@@ -780,6 +825,7 @@ export default function App() {
           onSettingsToggle={() =>
             setView((v) => (v === 'settings' ? 'app' : 'settings'))
           }
+          onHome={() => setView('app')}
         />
 
         {view === 'settings' && (

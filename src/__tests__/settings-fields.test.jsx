@@ -357,15 +357,26 @@ describe('TextInput', () => {
 // ── NumberUnit ───────────────────────────────────────────────────────────────
 
 describe('NumberUnit', () => {
-  it('fires onChange with a number when a valid value is typed', () => {
+  it('fires onChange with the raw string so non-numeric input can be validated', () => {
     const onChange = vi.fn();
     const { container } = render(
-      <NumberUnit value={5} unit="s" onChange={onChange} min={0} />
+      <NumberUnit value={5} unit="s" onChange={onChange} />
     );
     fireEvent.change(container.querySelector('input'), {
       target: { value: '10' },
     });
-    expect(onChange).toHaveBeenCalledWith(10);
+    expect(onChange).toHaveBeenCalledWith('10');
+  });
+
+  it('passes non-numeric text through unchanged (validated upstream)', () => {
+    const onChange = vi.fn();
+    const { container } = render(
+      <NumberUnit value={5} unit="s" onChange={onChange} />
+    );
+    fireEvent.change(container.querySelector('input'), {
+      target: { value: 'abc' },
+    });
+    expect(onChange).toHaveBeenCalledWith('abc');
   });
 
   it('fires onChange with empty string when the input is cleared', () => {
