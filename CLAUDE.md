@@ -77,6 +77,8 @@ production `base`, and the Vitest block.
     ├── select-step.jsx     # Step 1 — pick wanted albums
     ├── results-step.jsx    # Step 2 — per-album source candidates
     ├── download-step.jsx   # Step 3 — live download progress (SSE)
+    ├── wanted-helpers.js      # mapWantedAlbum / formatDuration / albumTypeLabel / deriveLibraries
+    ├── cover.jsx              # <Cover coverUrl fallback lg /> — real cover art with vinyl-stripe fallback
     ├── select-helpers.js      # sortAlbums / filterAlbums / paginate
     ├── results-helpers.js     # scoreCandidate (Levenshtein) / getBestCandidate / buildDownloadItems
     ├── download-helpers.js    # parseSSEEvent / applyProgressUpdate
@@ -193,7 +195,14 @@ their contracts):
 value, is_set, preview}` for every surfaced setting.
 - `PUT /api/settings` body `{key: stringValue}` — upsert one or more settings.
 - `DELETE /api/settings/<key>` — reset one setting to env/default.
-- `GET /api/wanted` — Lidarr wanted/missing albums.
+- `GET /api/wanted` — Lidarr wanted/missing albums; returns array of
+  `{artist, title, album_id, release_date, album_type, duration, track_count,
+  cover_url, root_folder}`. Mapped to the UI shape by `mapWantedAlbum` in
+  `wanted-helpers.js` (`duration` is milliseconds; `release_date` may be `"N/A"`).
+- `GET /api/version` — service and bundled-tool versions; returns
+  `{albfetcharr, yt_dlp, ymd}` (mapped to `{service, ytdlp, ymd}` in the
+  `VersionFooter`). Fetched once on mount; the footer renders nothing until
+  all three fields arrive.
 - `GET /api/sources` — available source providers.
 - `GET /api/search` — candidate matches for an album.
 - `POST /api/download` body `{items, overrides?}` — start a download; optional

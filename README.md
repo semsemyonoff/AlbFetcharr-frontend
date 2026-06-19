@@ -49,6 +49,11 @@ npm test             # Vitest (vitest --run)
 - `src/main.jsx` — точка входа React, импортирует `styles.css`.
 - `src/app.jsx` — корневой компонент с пошаговым flow.
 - `src/select-step.jsx`, `src/results-step.jsx`, `src/download-step.jsx` — три шага.
+- `src/wanted-helpers.js` — маппинг ответа `/api/wanted` → UI-объект альбома
+  (`mapWantedAlbum`), форматирование длительности, метки типа альбома,
+  получение списка библиотек (`deriveLibraries`).
+- `src/cover.jsx` — компонент `<Cover>`: реальная обложка из `cover_url`
+  с фолбэком на vinyl-stripe-заглушку при ошибке или отсутствии URL.
 - `src/*-helpers.js` — чистые помощники для каждого шага (покрыты тестами).
 - `src/accent-helpers.js` — палитра акцента → CSS-переменные (выбор в панели Tweaks).
 - `src/i18n.js` — переводы (EN/RU) + `I18N_FNS`/`pluralRu` (интерполяция и склонения).
