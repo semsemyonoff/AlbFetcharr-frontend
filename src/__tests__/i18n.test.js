@@ -144,6 +144,16 @@ describe('i18n', () => {
       'units_kbps',
       'units_px',
       'units_s',
+      // Stage-1 redesign keys (Task 3)
+      'sort_album',
+      'sort_library',
+      'th_type',
+      'th_duration',
+      'th_library',
+      'lib_all',
+      'type_Album',
+      'type_EP',
+      'type_Single',
     ];
     newKeys.forEach((key) => {
       expect(I18N.en[key], `en.${key}`).toBeTruthy();
