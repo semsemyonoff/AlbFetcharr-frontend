@@ -52,6 +52,14 @@ describe('responsive styles.css', () => {
     expect(css).toContain('.lib-tag::before');
   });
 
+  it('includes version footer styles', () => {
+    expect(css).toContain('.app-versions');
+    expect(css).toContain('.ver-item');
+    expect(css).toContain('.ver-label');
+    expect(css).toContain('.ver-num');
+    expect(css).toContain('.ver-sep');
+  });
+
   it('styles every download status bucket emitted by the backend', () => {
     for (const status of [
       'starting',

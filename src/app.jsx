@@ -33,6 +33,28 @@ import {
 import { SESSION_FIELDS } from './settings-catalog.js';
 import { mapWantedAlbum, deriveLibraries } from './wanted-helpers.js';
 
+const VersionFooter = ({ versions }) => {
+  if (!versions) return null;
+  return (
+    <footer className="app-versions">
+      <span className="ver-item ver-app">
+        <span className="ver-label">AlbFetcharr</span>
+        <span className="ver-num">v{versions.service}</span>
+      </span>
+      <span className="ver-sep">·</span>
+      <span className="ver-item ver-ytdlp">
+        <span className="ver-label">yt-dlp</span>
+        <span className="ver-num">{versions.ytdlp}</span>
+      </span>
+      <span className="ver-sep">·</span>
+      <span className="ver-item ver-ymd">
+        <span className="ver-label">ymd</span>
+        <span className="ver-num">v{versions.ymd}</span>
+      </span>
+    </footer>
+  );
+};
+
 function nowHHMMSS() {
   const d = new Date();
   const pad = (n) => String(n).padStart(2, '0');
@@ -194,6 +216,35 @@ export default function App() {
   const [committedSettings, setCommittedSettings] = React.useState({});
   const [view, setView] = React.useState('app');
   const [runOverrides, setRunOverrides] = React.useState({});
+
+  // Version footer state
+  const [versions, setVersions] = React.useState(null);
+
+  React.useEffect(() => {
+    fetch('/api/version')
+      .then((res) => {
+        if (!res.ok) return;
+        return res.json();
+      })
+      .then((data) => {
+        if (
+          data &&
+          typeof data.albfetcharr === 'string' &&
+          data.albfetcharr &&
+          typeof data.yt_dlp === 'string' &&
+          data.yt_dlp &&
+          typeof data.ymd === 'string' &&
+          data.ymd
+        ) {
+          setVersions({
+            service: data.albfetcharr,
+            ytdlp: data.yt_dlp,
+            ymd: data.ymd,
+          });
+        }
+      })
+      .catch(() => {});
+  }, []);
 
   // Lidarr fetch state
   const [fetchState, setFetchState] = React.useState('loading');
@@ -907,6 +958,7 @@ export default function App() {
             )}
           </>
         )}
+        <VersionFooter versions={versions} />
       </div>
 
       {toastMessage && (
