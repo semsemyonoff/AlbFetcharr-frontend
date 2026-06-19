@@ -8,6 +8,8 @@ const mockAlbums = [
     album: 'OK Computer',
     year: 1997,
     addedDaysAgo: 5,
+    tracks: 12,
+    library: 'Lossless',
     status: 'missing',
   },
   {
@@ -16,6 +18,8 @@ const mockAlbums = [
     album: 'Leviathan',
     year: 2004,
     addedDaysAgo: 10,
+    tracks: 9,
+    library: 'MP3',
     status: 'missing',
   },
   {
@@ -24,6 +28,8 @@ const mockAlbums = [
     album: 'Selected Ambient Works',
     year: 1992,
     addedDaysAgo: 2,
+    tracks: 13,
+    library: 'Lossless',
     status: 'done',
   },
   {
@@ -32,6 +38,8 @@ const mockAlbums = [
     album: 'Lateralus',
     year: 2001,
     addedDaysAgo: 15,
+    tracks: 13,
+    library: 'Vinyl',
     status: 'missing',
   },
 ];
@@ -76,6 +84,36 @@ describe('sortAlbums', () => {
   it('sorts by added descending (recently added first)', () => {
     const sorted = sortAlbums(mockAlbums, 'added', 'desc');
     expect(sorted.map((a) => a.addedDaysAgo)).toEqual([2, 5, 10, 15]);
+  });
+
+  it('sorts by library ascending', () => {
+    const sorted = sortAlbums(mockAlbums, 'library', 'asc');
+    expect(sorted.map((a) => a.library)).toEqual([
+      'Lossless',
+      'Lossless',
+      'MP3',
+      'Vinyl',
+    ]);
+  });
+
+  it('sorts by library descending', () => {
+    const sorted = sortAlbums(mockAlbums, 'library', 'desc');
+    expect(sorted.map((a) => a.library)).toEqual([
+      'Vinyl',
+      'MP3',
+      'Lossless',
+      'Lossless',
+    ]);
+  });
+
+  it('sorts by tracks ascending', () => {
+    const sorted = sortAlbums(mockAlbums, 'tracks', 'asc');
+    expect(sorted.map((a) => a.tracks)).toEqual([9, 12, 13, 13]);
+  });
+
+  it('sorts by tracks descending', () => {
+    const sorted = sortAlbums(mockAlbums, 'tracks', 'desc');
+    expect(sorted.map((a) => a.tracks)).toEqual([13, 13, 12, 9]);
   });
 
   it('does not mutate original array', () => {
@@ -123,6 +161,23 @@ describe('filterAlbums', () => {
   it('trims query whitespace', () => {
     const filtered = filterAlbums(mockAlbums, '  Tool  ');
     expect(filtered).toHaveLength(1);
+  });
+
+  it('filters by library substring (case-insensitive)', () => {
+    const filtered = filterAlbums(mockAlbums, 'loss');
+    expect(filtered).toHaveLength(2);
+    expect(filtered.every((a) => a.library === 'Lossless')).toBe(true);
+  });
+
+  it('filters by exact library name', () => {
+    const filtered = filterAlbums(mockAlbums, 'Vinyl');
+    expect(filtered).toHaveLength(1);
+    expect(filtered[0].artist).toBe('Tool');
+  });
+
+  it('returns empty when library does not match', () => {
+    const filtered = filterAlbums(mockAlbums, 'FLAC');
+    expect(filtered).toHaveLength(0);
   });
 });
 
