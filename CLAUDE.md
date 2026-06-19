@@ -88,7 +88,7 @@ production `base`, and the Vitest block.
     ├── settings-fields.jsx    # OriginBadge / ResetBtn / Field / Toggle / Segmented / Select / SecretField / …
     ├── settings-step.jsx      # SettingsScreen — global settings screen with draft, nav, save bar
     ├── session-overrides.jsx  # ThisRunPanel — per-download Tier-3 overrides, pre-filled from global defaults
-    ├── i18n.js                # I18N (en/ru) tables + AGO_FNS + I18N_FNS/pluralRu (interpolation + RU plurals)
+    ├── i18n.js                # I18N (en/ru) tables + I18N_FNS/pluralRu (interpolation + RU plurals)
     ├── icons.jsx              # <Icon name=… /> named SVG set (incl. eye/eyeOff for SecretField)
     ├── tweaks-panel.jsx       # Developer overlay (unrelated to Settings — its own UI kit + useTweaks hook)
     ├── styles.css             # All styling via CSS variables; light/dark/system themes; responsive (1024/640/380)
@@ -197,7 +197,7 @@ value, is_set, preview}` for every surfaced setting.
 - `DELETE /api/settings/<key>` — reset one setting to env/default.
 - `GET /api/wanted` — Lidarr wanted/missing albums; returns array of
   `{artist, title, album_id, release_date, album_type, duration, track_count,
-  cover_url, root_folder}`. Mapped to the UI shape by `mapWantedAlbum` in
+cover_url, root_folder}`. Mapped to the UI shape by `mapWantedAlbum` in
   `wanted-helpers.js` (`duration` is milliseconds; `release_date` may be `"N/A"`).
 - `GET /api/version` — service and bundled-tool versions; returns
   `{albfetcharr, yt_dlp, ymd}` (mapped to `{service, ytdlp, ymd}` in the

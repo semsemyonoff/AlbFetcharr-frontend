@@ -143,14 +143,21 @@ describe('albumTypeLabel', () => {
     expect(albumTypeLabel('NotAType', 'ru')).toBe('NotAType');
   });
 
-  it('returns the raw type as fallback when i18n key is missing', () => {
+  it('returns the English label for known types', () => {
     expect(albumTypeLabel('Album', 'en')).toBe('Album');
     expect(albumTypeLabel('EP', 'en')).toBe('EP');
     expect(albumTypeLabel('Single', 'en')).toBe('Single');
   });
 
+  it('returns the localized Russian label for known types', () => {
+    expect(albumTypeLabel('Album', 'ru')).toBe('Альбом');
+    expect(albumTypeLabel('EP', 'ru')).toBe('EP');
+    expect(albumTypeLabel('Single', 'ru')).toBe('Сингл');
+  });
+
   it('falls back to en when unknown lang is given', () => {
     expect(albumTypeLabel('Album', 'zz')).toBe('Album');
+    expect(albumTypeLabel('Single', 'zz')).toBe('Single');
   });
 });
 

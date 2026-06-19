@@ -1,13 +1,13 @@
 # AlbFetcharr frontend
 
-React 18 + Vite SPA для [AlbFetcharr](https://github.com/semsemyonoff/albfetcharr) —
+React 19 + Vite SPA для [AlbFetcharr](https://github.com/semsemyonoff/albfetcharr) —
 интерфейс из трёх шагов (Select → Results → Download). Общается с бэкендом
 исключительно по HTTP (`/api`, `/static`); общего кода или файловой системы с
 бэкендом нет — он живёт в отдельном репозитории.
 
 ## Требования
 
-- Node.js 20+
+- Node.js 20.19+
 
 ## Разработка
 

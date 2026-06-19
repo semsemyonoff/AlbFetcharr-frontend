@@ -445,27 +445,6 @@ export const I18N = {
   },
 };
 
-export const AGO_FNS = {
-  en: (d) =>
-    d === 0
-      ? 'today'
-      : d === 1
-        ? '1 day ago'
-        : d < 30
-          ? `${d} days ago`
-          : `${Math.floor(d / 30)} mo ago`,
-  ru: (d) =>
-    d === 0
-      ? 'сегодня'
-      : d === 1
-        ? '1 день назад'
-        : d < 5
-          ? `${d} дня назад`
-          : d < 30
-            ? `${d} дней назад`
-            : `${Math.floor(d / 30)} мес. назад`,
-};
-
 // --- Pluralization & interpolation helpers ---------------------------------
 // These live OUTSIDE the I18N tables on purpose: every I18N value must stay a
 // plain string (the suite enforces it), so any string that depends on a count
