@@ -31,6 +31,7 @@ import {
   isLosslessYtdlp,
 } from './settings-helpers.js';
 import { SESSION_FIELDS } from './settings-catalog.js';
+import { mapWantedAlbum } from './wanted-helpers.js';
 
 function nowHHMMSS() {
   const d = new Date();
@@ -168,25 +169,6 @@ const Stepper = ({ step, lang }) => {
   );
 };
 
-function mapBackendAlbum(album) {
-  const year = album.release_date
-    ? parseInt(album.release_date.split('-')[0])
-    : new Date().getFullYear();
-  return {
-    id: String(album.album_id),
-    artist: album.artist || 'Unknown Artist',
-    album: album.title || 'Unknown Album',
-    year,
-    tracks: 0,
-    addedDaysAgo: album.added
-      ? Math.max(
-          0,
-          Math.floor((Date.now() - new Date(album.added).getTime()) / 86400000)
-        )
-      : 0,
-    root_folder: album.root_folder,
-  };
-}
 
 function resolveTheme(theme) {
   if (theme === 'system') {
@@ -234,7 +216,7 @@ export default function App() {
         setFetchState('empty');
         setAlbums([]);
       } else {
-        const mapped = data.map((album) => mapBackendAlbum(album));
+        const mapped = data.map((album) => mapWantedAlbum(album));
         setAlbums(mapped);
         setFetchState('ready');
         setLastSync(I18N[lang].just_now);
