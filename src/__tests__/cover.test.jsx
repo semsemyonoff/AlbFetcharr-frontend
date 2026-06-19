@@ -23,7 +23,9 @@ describe('Cover', () => {
   });
 
   it('renders placeholder when coverUrl is an empty string', () => {
-    const { container } = render(<Cover coverUrl="" fallback="Boards of Canada" />);
+    const { container } = render(
+      <Cover coverUrl="" fallback="Boards of Canada" />
+    );
     expect(container.querySelector('img')).toBeNull();
     expect(container.querySelector('.vinyl-stripes')).toBeTruthy();
   });

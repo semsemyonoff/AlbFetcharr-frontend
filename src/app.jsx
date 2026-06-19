@@ -169,7 +169,6 @@ const Stepper = ({ step, lang }) => {
   );
 };
 
-
 function resolveTheme(theme) {
   if (theme === 'system') {
     const darkMode = window.matchMedia('(prefers-color-scheme: dark)').matches;

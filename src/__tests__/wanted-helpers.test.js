@@ -172,11 +172,7 @@ describe('deriveLibraries', () => {
   });
 
   it('excludes albums with empty library', () => {
-    const albums = [
-      { library: '' },
-      { library: 'Lossless' },
-      { library: '' },
-    ];
+    const albums = [{ library: '' }, { library: 'Lossless' }, { library: '' }];
     expect(deriveLibraries(albums)).toEqual(['Lossless']);
   });
 
@@ -190,11 +186,7 @@ describe('deriveLibraries', () => {
   });
 
   it('preserves encounter order, not alphabetical', () => {
-    const albums = [
-      { library: 'Z' },
-      { library: 'A' },
-      { library: 'M' },
-    ];
+    const albums = [{ library: 'Z' }, { library: 'A' }, { library: 'M' }];
     expect(deriveLibraries(albums)).toEqual(['Z', 'A', 'M']);
   });
 });
