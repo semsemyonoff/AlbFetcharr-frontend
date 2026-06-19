@@ -25,6 +25,13 @@ const SelectStep = ({
   const [page, setPage] = React.useState(1);
   const [rowsPerPage, setRowsPerPage] = React.useState(15);
 
+  // Drop a library filter that the latest albums no longer offer (e.g. after a
+  // refetch). Adjusted during render — the same pattern as the page reset below
+  // — so the table never renders all albums filtered out against a dead option.
+  if (libFilter && !availableLibraries.includes(libFilter)) {
+    setLibFilter('');
+  }
+
   // Reset to the first page whenever the filter / sort / page-size changes.
   // Done during render (React's "adjust state when an input changes" pattern)
   // instead of in an effect, so pagination never renders a stale page first.

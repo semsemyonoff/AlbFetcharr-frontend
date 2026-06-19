@@ -296,4 +296,57 @@ describe('SelectStep — library filter', () => {
     const btnsAfterFilter = [...container.querySelectorAll('.pg-btn')];
     expect(btnsAfterFilter[0].disabled).toBe(true);
   });
+
+  it('drops a stale library filter when a refetch removes that library', () => {
+    const props = {
+      t: I18N.en,
+      lang: 'en',
+      fetchState: 'ready',
+      onRefetch: () => {},
+      albums: ALBUMS,
+      selected: new Set(),
+      setSelected: () => {},
+      sources: {},
+      setSources: () => {},
+      onSearch: () => {},
+      availableSources: [],
+      availableLibraries: ['Lossless'],
+    };
+    const { container, rerender } = render(<SelectStep {...props} />);
+
+    const findLibSelect = () =>
+      [...container.querySelectorAll('.filter-select')].find((s) =>
+        [...s.options].some((o) => o.text === I18N.en.lib_all)
+      );
+
+    // Filter to Lossless — only Aphex Twin remains.
+    fireEvent.change(findLibSelect(), { target: { value: 'Lossless' } });
+    expect(findLibSelect().value).toBe('Lossless');
+    expect(container.querySelectorAll('.wt-card').length).toBe(1);
+
+    // Refetch returns albums without the 'Lossless' library.
+    const refetched = [
+      {
+        id: 99,
+        artist: 'Autechre',
+        album: 'Tri Repetae',
+        year: 1995,
+        tracks: 11,
+        durationMs: 0,
+        albumType: 'Album',
+        coverUrl: '',
+        library: 'MP3',
+      },
+    ];
+    rerender(
+      <SelectStep {...props} albums={refetched} availableLibraries={['MP3']} />
+    );
+
+    // The stale filter is dropped (back to "all"), so the new albums are shown
+    // instead of everything being filtered out against a dead option.
+    expect(findLibSelect().value).toBe('');
+    const cards = container.querySelectorAll('.wt-card');
+    expect(cards.length).toBe(1);
+    expect(cards[0].textContent).toContain('Autechre');
+  });
 });
