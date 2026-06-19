@@ -1,6 +1,8 @@
 import React from 'react';
 import { Icon } from './icons';
 import { I18N_FNS } from './i18n.js';
+import { Cover } from './cover.jsx';
+import { formatDuration, albumTypeLabel } from './wanted-helpers.js';
 
 const DEFAULT_SOURCES = ['yandex', 'youtube_music', 'soundcloud'];
 
@@ -31,6 +33,7 @@ function AlbumCard({
   item,
   choices,
   t,
+  lang,
   setChosen,
   setSkip,
   setActive,
@@ -102,19 +105,36 @@ function AlbumCard({
     }
   }
 
+  const albumType = a.albumType ?? '';
+  const library = a.library ?? '';
+
+  const ytParts = [];
+  if (albumType)
+    ytParts.push(
+      <span key="type" className={`type-tag t-${albumType.toLowerCase()}`}>
+        {albumTypeLabel(albumType, lang)}
+      </span>
+    );
+  ytParts.push(String(a.year ?? '—'));
+  if (a.tracks > 0) ytParts.push(`${a.tracks} ${t.track_count}`);
+  const dur = formatDuration(a.durationMs ?? 0);
+  if (dur !== '—') ytParts.push(dur);
+  if (library)
+    ytParts.push(
+      <span key="lib" className="lib-tag">
+        {library}
+      </span>
+    );
+
   return (
     <div className={`result-album ${isSkipped ? 'skipped' : ''}`}>
       <div className="ra-head">
-        <div className="cover lg">
-          <div className="vinyl-stripes"></div>
-          <span style={{ position: 'relative' }}>{a.artist.slice(0, 2)}</span>
-        </div>
+        <Cover coverUrl={a.coverUrl ?? ''} fallback={a.album} lg />
         <div className="meta">
-          <div className="artist">{a.artist}</div>
           <div className="album">{a.album}</div>
+          <div className="artist">{a.artist}</div>
           <div className="yt">
-            {a.year}
-            {a.tracks > 0 && ` · ${a.tracks} ${t.track_count}`}
+            {ytParts.flatMap((p, i) => (i === 0 ? [p] : [' · ', p]))}
           </div>
         </div>
         <div className="right">
@@ -175,6 +195,16 @@ function AlbumCard({
               const formatOptions = getFormatOptions(t, c.source);
               const showFormatSelect = formatOptions.length > 1;
 
+              const artistStr = (c.match_artists || []).join(', ');
+              const metaParts = [
+                artistStr || null,
+                c.year != null ? String(c.year) : '—',
+                c.track_count != null
+                  ? `${c.track_count} ${t.track_count}`
+                  : null,
+              ].filter(Boolean);
+              const metaText = metaParts.join(' · ');
+
               return (
                 <label
                   key={c.id}
@@ -187,20 +217,15 @@ function AlbumCard({
                     checked={isChosen}
                     onChange={() => setChosen(a.id, c, null)}
                   />
-                  <div className="cover">
-                    <div className="vinyl-stripes"></div>
-                    <span style={{ position: 'relative' }}>
-                      {c.match_artists && c.match_artists.length > 0
-                        ? c.match_artists[0].slice(0, 2)
-                        : '?'}
-                    </span>
-                  </div>
+                  <Cover
+                    coverUrl={c.cover_url ?? ''}
+                    fallback={c.match_title}
+                  />
                   <div style={{ minWidth: 0 }}>
-                    <div className="title">
-                      {(c.match_artists || []).join(', ')} — {c.match_title}
-                    </div>
+                    <div className="title">{c.match_title}</div>
                     <div className="meta">
-                      {c.year} · {c.track_count} {t.track_count} ·{' '}
+                      {metaText}
+                      {' · '}
                       <a
                         className="url"
                         href={c.match_url}
@@ -315,6 +340,7 @@ export const ResultsStep = ({
             item={item}
             choices={choices}
             t={t}
+            lang={lang}
             setChosen={setChosen}
             setSkip={setSkip}
             setActive={setActive}
