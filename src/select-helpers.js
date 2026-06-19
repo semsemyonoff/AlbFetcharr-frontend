@@ -51,7 +51,7 @@ export function filterAlbums(albums, query) {
     (album) =>
       album.artist.toLowerCase().includes(q) ||
       album.album.toLowerCase().includes(q) ||
-      String(album.year).includes(q) ||
+      (album.year != null ? String(album.year) : '').includes(q) ||
       (album.library || '').toLowerCase().includes(q)
   );
 }

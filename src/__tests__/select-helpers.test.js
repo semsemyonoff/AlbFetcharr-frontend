@@ -170,6 +170,15 @@ describe('filterAlbums', () => {
     const filtered = filterAlbums(mockAlbums, 'FLAC');
     expect(filtered).toHaveLength(0);
   });
+
+  it('does not match null-year albums on letters of "null"', () => {
+    // artist/album deliberately contain no n/u/l so only the year coercion
+    // could produce a false match.
+    const albums = [{ id: 'x', artist: 'Toto', album: 'Hydra', year: null }];
+    expect(filterAlbums(albums, 'n')).toHaveLength(0);
+    expect(filterAlbums(albums, 'u')).toHaveLength(0);
+    expect(filterAlbums(albums, 'null')).toHaveLength(0);
+  });
 });
 
 describe('paginate', () => {
