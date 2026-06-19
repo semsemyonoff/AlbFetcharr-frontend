@@ -31,7 +31,7 @@ import {
   isLosslessYtdlp,
 } from './settings-helpers.js';
 import { SESSION_FIELDS } from './settings-catalog.js';
-import { mapWantedAlbum } from './wanted-helpers.js';
+import { mapWantedAlbum, deriveLibraries } from './wanted-helpers.js';
 
 function nowHHMMSS() {
   const d = new Date();
@@ -843,6 +843,7 @@ export default function App() {
                   sources={sources}
                   setSources={setSources}
                   availableSources={availableSources}
+                  availableLibraries={deriveLibraries(albums)}
                   onSearch={onSearch}
                 />
               </>

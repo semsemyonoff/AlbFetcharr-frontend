@@ -7,7 +7,6 @@ const mockAlbums = [
     artist: 'Radiohead',
     album: 'OK Computer',
     year: 1997,
-    addedDaysAgo: 5,
     tracks: 12,
     library: 'Lossless',
     status: 'missing',
@@ -17,7 +16,6 @@ const mockAlbums = [
     artist: 'Mastodon',
     album: 'Leviathan',
     year: 2004,
-    addedDaysAgo: 10,
     tracks: 9,
     library: 'MP3',
     status: 'missing',
@@ -27,7 +25,6 @@ const mockAlbums = [
     artist: 'Aphex Twin',
     album: 'Selected Ambient Works',
     year: 1992,
-    addedDaysAgo: 2,
     tracks: 13,
     library: 'Lossless',
     status: 'done',
@@ -37,7 +34,6 @@ const mockAlbums = [
     artist: 'Tool',
     album: 'Lateralus',
     year: 2001,
-    addedDaysAgo: 15,
     tracks: 13,
     library: 'Vinyl',
     status: 'missing',
@@ -79,11 +75,6 @@ describe('sortAlbums', () => {
   it('sorts by year descending', () => {
     const sorted = sortAlbums(mockAlbums, 'year', 'desc');
     expect(sorted.map((a) => a.year)).toEqual([2004, 2001, 1997, 1992]);
-  });
-
-  it('sorts by added descending (recently added first)', () => {
-    const sorted = sortAlbums(mockAlbums, 'added', 'desc');
-    expect(sorted.map((a) => a.addedDaysAgo)).toEqual([2, 5, 10, 15]);
   });
 
   it('sorts by library ascending', () => {

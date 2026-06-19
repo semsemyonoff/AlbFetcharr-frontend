@@ -20,10 +20,6 @@ export function sortAlbums(albums, key, direction = 'asc') {
         av = a.year;
         bv = b.year;
         break;
-      case 'added':
-        av = -a.addedDaysAgo;
-        bv = -b.addedDaysAgo;
-        break;
       case 'library':
         av = a.library;
         bv = b.library;

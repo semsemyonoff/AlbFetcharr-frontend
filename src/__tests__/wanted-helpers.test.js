@@ -31,7 +31,6 @@ describe('mapWantedAlbum', () => {
     expect(result.coverUrl).toBe('https://example.com/cover.jpg');
     expect(result.library).toBe('Lossless');
     expect(result.root_folder).toBe('/libraries/Lossless');
-    expect(result.addedDaysAgo).toBe(0);
   });
 
   it('returns null year for release_date "N/A"', () => {
@@ -100,11 +99,6 @@ describe('mapWantedAlbum', () => {
   it('keeps root_folder verbatim', () => {
     const result = mapWantedAlbum(fullRecord);
     expect(result.root_folder).toBe('/libraries/Lossless');
-  });
-
-  it('sets addedDaysAgo to 0 (transitional shim)', () => {
-    const result = mapWantedAlbum(fullRecord);
-    expect(result.addedDaysAgo).toBe(0);
   });
 });
 

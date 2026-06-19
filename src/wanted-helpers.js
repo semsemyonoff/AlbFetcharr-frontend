@@ -21,7 +21,6 @@ export function mapWantedAlbum(album) {
     coverUrl: album.cover_url ?? '',
     library,
     root_folder: album.root_folder,
-    addedDaysAgo: 0,
   };
 }
 
