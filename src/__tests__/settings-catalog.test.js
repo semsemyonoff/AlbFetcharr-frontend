@@ -17,6 +17,7 @@ import {
 
 // Backend registry keys fixture — mirrors registry.py _CATALOG exactly.
 // UI keys must be a subset; default_lang/default_theme are intentionally omitted.
+// yandex_path_pattern and ytdlp_path_pattern were removed in Task 1.
 const BACKEND_REGISTRY_KEYS = new Set([
   // Tier 1 — secrets
   'yandex_token',
@@ -34,12 +35,10 @@ const BACKEND_REGISTRY_KEYS = new Set([
   'enable_soundcloud',
   'yandex_delay',
   'yandex_compat_level',
-  'yandex_path_pattern',
   'yandex_unsafe_path',
   'yandex_net_timeout',
   'yandex_net_tries',
   'yandex_net_retry_delay',
-  'ytdlp_path_pattern',
   'ytdlp_retries',
   // Tier 3 — session-overridable
   'yandex_quality',
@@ -79,7 +78,6 @@ const YANDEX_ONLY_KEYS = new Set([
   'yandex_token',
   'yandex_delay',
   'yandex_compat_level',
-  'yandex_path_pattern',
   'yandex_unsafe_path',
   'yandex_net_timeout',
   'yandex_net_tries',
@@ -100,9 +98,15 @@ function choiceKeys(choices) {
 }
 
 describe('SETTINGS_SECTIONS', () => {
-  it('has the four expected section ids', () => {
+  it('has the five expected section ids including environment', () => {
     const ids = SETTINGS_SECTIONS.map((s) => s.id);
-    expect(ids).toEqual(['sources', 'lidarr', 'download', 'advanced']);
+    expect(ids).toEqual([
+      'sources',
+      'lidarr',
+      'download',
+      'advanced',
+      'environment',
+    ]);
   });
 
   it('every section labelKey resolves in I18N.en and I18N.ru', () => {
@@ -206,10 +210,10 @@ describe('SETTINGS_FIELDS — provider tagging (Yandex / yt-dlp split)', () => {
     });
   });
 
-  it('both yandex_path_pattern and ytdlp_path_pattern are present', () => {
+  it('yandex_path_pattern and ytdlp_path_pattern are absent (removed in Task 1)', () => {
     const keys = new Set(SETTINGS_FIELDS.map((f) => f.key));
-    expect(keys.has('yandex_path_pattern')).toBe(true);
-    expect(keys.has('ytdlp_path_pattern')).toBe(true);
+    expect(keys.has('yandex_path_pattern')).toBe(false);
+    expect(keys.has('ytdlp_path_pattern')).toBe(false);
   });
 
   it('yandex_quality appears exactly once in SETTINGS_FIELDS', () => {
@@ -219,15 +223,14 @@ describe('SETTINGS_FIELDS — provider tagging (Yandex / yt-dlp split)', () => {
     expect(count).toBe(1);
   });
 
-  it('yandex-provider session keys are grouped under dl-yandex (download section)', () => {
+  it('yandex-provider surfaced session keys are grouped under dl-yandex (download section)', () => {
+    // yandex_only_music and yandex_stick_to_artist are hidden from UI (kept in registry)
     const yandexSessionKeys = [
       'yandex_quality',
       'yandex_lyrics_format',
       'yandex_cover_resolution',
       'yandex_embed_cover',
       'yandex_skip_existing',
-      'yandex_only_music',
-      'yandex_stick_to_artist',
       'yandex_clear_comments',
     ];
     yandexSessionKeys.forEach((key) => {
@@ -236,25 +239,31 @@ describe('SETTINGS_FIELDS — provider tagging (Yandex / yt-dlp split)', () => {
       expect(field.group, `${key} not in dl-yandex group`).toBe('dl-yandex');
     });
   });
+
+  it('yandex_only_music and yandex_stick_to_artist are absent from SETTINGS_FIELDS (UI hidden)', () => {
+    const keys = new Set(SETTINGS_FIELDS.map((f) => f.key));
+    expect(keys.has('yandex_only_music')).toBe(false);
+    expect(keys.has('yandex_stick_to_artist')).toBe(false);
+  });
 });
 
-describe('SESSION_FIELDS — exact Tier-3 match', () => {
-  it('SESSION_FIELDS keys exactly match the backend session-scoped keys', () => {
-    const sessionKeys = new Set(SESSION_FIELDS.map((f) => f.key));
-    // Every SESSION_FIELD key is in the backend session keys
+describe('SESSION_FIELDS — Tier-3 subset', () => {
+  it('every SESSION_FIELDS key is a backend session-scoped key', () => {
+    // SESSION_FIELDS is a SUBSET of BACKEND_SESSION_KEYS — some session keys
+    // (yandex_only_music, yandex_stick_to_artist) are kept in the registry as
+    // env-only escape hatches but hidden from the UI.
     SESSION_FIELDS.forEach(({ key }) => {
       expect(
         BACKEND_SESSION_KEYS.has(key),
         `${key} is not a session-scoped key in the registry`
       ).toBe(true);
     });
-    // Every backend session key is covered
-    BACKEND_SESSION_KEYS.forEach((key) => {
-      expect(
-        sessionKeys.has(key),
-        `session key ${key} is missing from SESSION_FIELDS`
-      ).toBe(true);
-    });
+  });
+
+  it('yandex_only_music and yandex_stick_to_artist are absent from SESSION_FIELDS', () => {
+    const sessionKeys = new Set(SESSION_FIELDS.map((f) => f.key));
+    expect(sessionKeys.has('yandex_only_music')).toBe(false);
+    expect(sessionKeys.has('yandex_stick_to_artist')).toBe(false);
   });
 
   it('every SESSION_FIELD control is a known type', () => {
@@ -321,7 +330,8 @@ describe('SESSION_FIELDS — exact Tier-3 match', () => {
     });
   });
 
-  it('SESSION_FIELDS Yandex group has all expected Yandex session fields', () => {
+  it('SESSION_FIELDS Yandex group has the surfaced Yandex session fields', () => {
+    // yandex_only_music and yandex_stick_to_artist are hidden from UI
     const yandexGroup = SESSION_FIELDS.filter(
       (f) => f.group === 'session-yandex'
     ).map((f) => f.key);
@@ -331,8 +341,6 @@ describe('SESSION_FIELDS — exact Tier-3 match', () => {
       'yandex_cover_resolution',
       'yandex_embed_cover',
       'yandex_skip_existing',
-      'yandex_only_music',
-      'yandex_stick_to_artist',
       'yandex_clear_comments',
     ];
     expect(yandexGroup.sort()).toEqual(expected.slice().sort());
@@ -355,8 +363,8 @@ describe('choice arrays', () => {
     expect(LYRICS_CHOICES.map((c) => c.value)).toEqual(['none', 'text', 'lrc']);
   });
 
-  it('YTDLP_FORMAT_CHOICES has all 7 backend formats', () => {
-    const expected = ['flac', 'mp3', 'm4a', 'opus', 'vorbis', 'aac', 'wav'];
+  it('YTDLP_FORMAT_CHOICES has the 4 supported formats: best, opus, m4a, mp3', () => {
+    const expected = ['best', 'opus', 'm4a', 'mp3'];
     expect(YTDLP_FORMAT_CHOICES.map((c) => c.value)).toEqual(expected);
   });
 
@@ -409,7 +417,8 @@ describe('accessor helpers', () => {
   it('fieldsForSourceCard("youtube") returns YouTube fields', () => {
     const keys = fieldsForSourceCard('youtube').map((f) => f.key);
     expect(keys).toContain('enable_youtube_music');
-    expect(keys).toContain('ytmusic_oauth_file');
+    // ytmusic_oauth_file moved to environment section (readonly, no sourceCard)
+    expect(keys).not.toContain('ytmusic_oauth_file');
     expect(keys).toContain('ytmusic_client_id');
     expect(keys).toContain('ytmusic_client_secret');
   });
@@ -429,5 +438,21 @@ describe('accessor helpers', () => {
     const result = sessionFieldsForGroup('session-ytdlp');
     result.forEach((f) => expect(f.group).toBe('session-ytdlp'));
     expect(result.map((f) => f.key)).toContain('ytdlp_format');
+  });
+
+  it('fieldsForSection("environment") returns the four read-only container-setup keys', () => {
+    const result = fieldsForSection('environment');
+    const keys = result.map((f) => f.key);
+    expect(keys).toContain('ytmusic_oauth_file');
+    expect(keys).toContain('ytdlp_cookies_file');
+    expect(keys).toContain('lidarr_import_path');
+    expect(keys).toContain('library_map');
+    expect(keys.length).toBe(4);
+  });
+
+  it('all environment fields have control "readonly"', () => {
+    fieldsForSection('environment').forEach(({ key, control }) => {
+      expect(control, `${key} should be readonly`).toBe('readonly');
+    });
   });
 });

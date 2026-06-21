@@ -146,10 +146,10 @@ describe('pre-fill', () => {
 
   it('pre-fills ytdlp_format select from committed value', () => {
     const { container } = renderOpen(
-      makeCommitted({ ytdlp_format: makeItem('ytdlp_format', 'flac') })
+      makeCommitted({ ytdlp_format: makeItem('ytdlp_format', 'opus') })
     );
     const select = Array.from(container.querySelectorAll('select')).find(
-      (s) => s.value === 'flac'
+      (s) => s.value === 'opus'
     );
     expect(select).toBeTruthy();
   });
@@ -401,14 +401,13 @@ describe('ytdlp_quality disabled for lossless format', () => {
 describe('all session fields rendered', () => {
   it('renders all yandex session field labels', () => {
     const { container } = renderOpen();
+    // yandex_only_music and yandex_stick_to_artist removed from SESSION_FIELDS (UI hidden)
     for (const labelKey of [
       'dl_yandex_quality',
       'dl_lyrics',
       'dl_cover_res',
       'dl_embed',
       'dl_skip',
-      'dl_only_music',
-      'dl_stick_artist',
       'dl_clear_comments',
     ]) {
       const labels = container.querySelectorAll('.field-label');
@@ -458,11 +457,9 @@ describe('validation', () => {
     expect(container.querySelector('.field-error')).toBeNull();
   });
 
-  it('does not flag a disabled (lossless) quality field', () => {
-    const { container } = renderOpen(makeCommitted(), { ytdlp_format: 'flac' });
-    // quality is disabled; even though committed value exists, no error shows
-    expect(container.querySelector('.field-error')).toBeNull();
-  });
+  // "disabled quality for lossless format" test removed: flac/wav no longer in
+  // the format enum. Task 6 will add a "best passthrough → quality hidden" test
+  // once isPassthroughYtdlp is wired into the session-overrides component.
 
   it('flags a negative cover resolution', () => {
     const { container } = renderOpen();

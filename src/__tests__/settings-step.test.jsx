@@ -110,7 +110,7 @@ function makeCommitted(overrides = {}) {
     }),
     ytdlp_format: makeItem('ytdlp_format', {
       type: 'enum',
-      value: 'flac',
+      value: 'opus',
       source: 'default',
     }),
     ytdlp_quality: makeItem('ytdlp_quality', {
@@ -556,15 +556,16 @@ describe('SettingsScreen — backend error in save bar', () => {
 // ── Section nav ───────────────────────────────────────────────────────────────
 
 describe('SettingsScreen — section nav', () => {
-  it('renders all four nav items', () => {
+  it('renders all five nav items including Environment', () => {
     const { container } = renderScreen();
     const navBtns = container.querySelectorAll('.settings-nav button');
-    expect(navBtns.length).toBe(4);
+    expect(navBtns.length).toBe(5);
     const labels = Array.from(navBtns).map((b) => b.textContent);
     expect(labels.some((l) => l.includes(t.nav_sources))).toBe(true);
     expect(labels.some((l) => l.includes(t.nav_lidarr))).toBe(true);
     expect(labels.some((l) => l.includes(t.nav_download))).toBe(true);
     expect(labels.some((l) => l.includes(t.nav_advanced))).toBe(true);
+    expect(labels.some((l) => l.includes(t.nav_environment))).toBe(true);
   });
 
   it('first section nav button has "on" class by default', () => {
@@ -613,52 +614,8 @@ describe('SettingsScreen — encryptionReady', () => {
   });
 });
 
-// ── library_map adapter ───────────────────────────────────────────────────────
-
-describe('SettingsScreen — library_map textarea', () => {
-  it('sends wire form in puts when user fills in the textarea', async () => {
-    const onSave = vi.fn().mockResolvedValue(undefined);
-    const { container } = renderScreen({ onSave });
-
-    const textarea = container.querySelector('textarea.set-input');
-    expect(textarea).toBeTruthy();
-
-    // Type a mapping in UI form (with spaces around =)
-    fireEvent.change(textarea, {
-      target: { value: '/music = /downloads' },
-    });
-
-    const saveBtn = container.querySelector('.btn.btn-primary');
-    fireEvent.click(saveBtn);
-
-    await waitFor(() => expect(onSave).toHaveBeenCalledOnce());
-    const [puts] = onSave.mock.calls[0];
-    // Wire form has no spaces around =
-    expect(puts.library_map).toBe('/music=/downloads');
-  });
-
-  it('textarea shows committed value as UI form on mount', () => {
-    const committed = makeCommitted({
-      library_map: makeItem('library_map', {
-        value: '/a=/b,/c=/d',
-        source: 'db',
-      }),
-    });
-    const { container } = renderScreen({ committed });
-    const textarea = container.querySelector('textarea.set-input');
-    // Should show UI form with spaces
-    expect(textarea.value).toContain(' = ');
-  });
-
-  it('invalid library_map format disables Save', () => {
-    const { container } = renderScreen();
-    const textarea = container.querySelector('textarea.set-input');
-    // Missing "=" in the line
-    fireEvent.change(textarea, { target: { value: 'no-equals-sign' } });
-    const saveBtn = container.querySelector('.btn.btn-primary');
-    expect(saveBtn.disabled).toBe(true);
-  });
-});
+// library_map textarea tests removed: library_map moved to the read-only
+// Environment section in Task 5. Task 6 will add read-only rendering tests.
 
 // ── Source card visibility ────────────────────────────────────────────────────
 

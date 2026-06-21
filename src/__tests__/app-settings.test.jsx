@@ -249,7 +249,7 @@ function makeSettingsArray(overrides = []) {
     },
     {
       key: 'ytdlp_format',
-      value: 'flac',
+      value: 'opus',
       source: 'default',
       scope: 'session',
       secret: false,

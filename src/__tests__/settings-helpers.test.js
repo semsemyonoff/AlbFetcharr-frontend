@@ -10,7 +10,10 @@ import {
   strToBool,
   coverResToUi,
   uiToCoverRes,
-  isLosslessYtdlp,
+  isPassthroughYtdlp,
+  YTDLP_QUALITY_PRESETS,
+  qualityPresetsFor,
+  snapQuality,
   displayValue,
   libraryMapToUi,
   uiToLibraryMap,
@@ -300,16 +303,109 @@ describe('coverResToUi / uiToCoverRes', () => {
   });
 });
 
-// ── isLosslessYtdlp ───────────────────────────────────────────────────────────
+// ── isPassthroughYtdlp ────────────────────────────────────────────────────────
 
-describe('isLosslessYtdlp', () => {
-  it('returns true for flac', () => expect(isLosslessYtdlp('flac')).toBe(true));
-  it('returns true for wav', () => expect(isLosslessYtdlp('wav')).toBe(true));
-  it('returns false for mp3', () => expect(isLosslessYtdlp('mp3')).toBe(false));
+describe('isPassthroughYtdlp', () => {
+  it('returns true for "best" (passthrough — no re-encode)', () =>
+    expect(isPassthroughYtdlp('best')).toBe(true));
   it('returns false for opus', () =>
-    expect(isLosslessYtdlp('opus')).toBe(false));
-  it('returns false for m4a', () => expect(isLosslessYtdlp('m4a')).toBe(false));
-  it('returns false for null', () => expect(isLosslessYtdlp(null)).toBe(false));
+    expect(isPassthroughYtdlp('opus')).toBe(false));
+  it('returns false for m4a', () =>
+    expect(isPassthroughYtdlp('m4a')).toBe(false));
+  it('returns false for mp3', () =>
+    expect(isPassthroughYtdlp('mp3')).toBe(false));
+  it('returns false for null', () =>
+    expect(isPassthroughYtdlp(null)).toBe(false));
+  it('returns false for undefined', () =>
+    expect(isPassthroughYtdlp(undefined)).toBe(false));
+});
+
+// ── YTDLP_QUALITY_PRESETS / qualityPresetsFor / snapQuality ──────────────────
+
+describe('YTDLP_QUALITY_PRESETS', () => {
+  it('defines presets for opus, m4a, mp3', () => {
+    expect(Object.keys(YTDLP_QUALITY_PRESETS).sort()).toEqual([
+      'm4a',
+      'mp3',
+      'opus',
+    ]);
+  });
+
+  it('opus has options [192, 160, 128, 96] and default 160', () => {
+    expect(YTDLP_QUALITY_PRESETS.opus.options).toEqual([192, 160, 128, 96]);
+    expect(YTDLP_QUALITY_PRESETS.opus.default).toBe(160);
+  });
+
+  it('m4a has options [256, 192, 128] and default 256', () => {
+    expect(YTDLP_QUALITY_PRESETS.m4a.options).toEqual([256, 192, 128]);
+    expect(YTDLP_QUALITY_PRESETS.m4a.default).toBe(256);
+  });
+
+  it('mp3 has options [320, 256, 192, 128] and default 256', () => {
+    expect(YTDLP_QUALITY_PRESETS.mp3.options).toEqual([320, 256, 192, 128]);
+    expect(YTDLP_QUALITY_PRESETS.mp3.default).toBe(256);
+  });
+
+  it('all preset defaults are included in their own options list', () => {
+    Object.entries(YTDLP_QUALITY_PRESETS).forEach(
+      ([fmt, { options, default: def }]) => {
+        expect(options, `${fmt} default not in options`).toContain(def);
+      }
+    );
+  });
+});
+
+describe('qualityPresetsFor', () => {
+  it('returns preset entry for opus', () => {
+    expect(qualityPresetsFor('opus')).toEqual(YTDLP_QUALITY_PRESETS.opus);
+  });
+
+  it('returns preset entry for m4a', () => {
+    expect(qualityPresetsFor('m4a')).toEqual(YTDLP_QUALITY_PRESETS.m4a);
+  });
+
+  it('returns preset entry for mp3', () => {
+    expect(qualityPresetsFor('mp3')).toEqual(YTDLP_QUALITY_PRESETS.mp3);
+  });
+
+  it('returns null for "best" (passthrough — quality hidden)', () => {
+    expect(qualityPresetsFor('best')).toBeNull();
+  });
+
+  it('returns null for unknown format', () => {
+    expect(qualityPresetsFor('flac')).toBeNull();
+    expect(qualityPresetsFor(null)).toBeNull();
+    expect(qualityPresetsFor(undefined)).toBeNull();
+  });
+});
+
+describe('snapQuality', () => {
+  it('returns null for "best" (quality hidden)', () => {
+    expect(snapQuality('best', '160')).toBeNull();
+  });
+
+  it('preserves current value when it is in the preset list', () => {
+    expect(snapQuality('opus', '128')).toBe('128');
+    expect(snapQuality('mp3', '320')).toBe('320');
+    expect(snapQuality('m4a', '192')).toBe('192');
+  });
+
+  it('snaps to format default when current is not in preset list', () => {
+    expect(snapQuality('opus', '320')).toBe('160'); // 320 not in opus presets
+    expect(snapQuality('mp3', '96')).toBe('256'); // 96 not in mp3 presets
+    expect(snapQuality('m4a', '96')).toBe('256'); // 96 not in m4a presets
+  });
+
+  it('snaps to default when current is null/empty', () => {
+    expect(snapQuality('opus', null)).toBe('160');
+    expect(snapQuality('opus', '')).toBe('160');
+    expect(snapQuality('m4a', undefined)).toBe('256');
+  });
+
+  it('returns null for unknown format', () => {
+    expect(snapQuality('flac', '160')).toBeNull();
+    expect(snapQuality(null, '160')).toBeNull();
+  });
 });
 
 // ── displayValue ──────────────────────────────────────────────────────────────
@@ -664,7 +760,6 @@ describe('nullable non-secret key handling', () => {
     'library_map',
     'ytmusic_client_id',
     'ytdlp_cookies_file',
-    'yandex_path_pattern',
   ];
 
   NULLABLE_KEYS.forEach((key) => {

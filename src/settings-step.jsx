@@ -235,6 +235,7 @@ export function SettingsScreen({
   // ── Generic field renderer ─────────────────────────────────────────────────
 
   const renderField = (field) => {
+    if (!field) return null;
     const { key, control, choices } = field;
     const committedItem = committed[key];
     const value = effVal(key);
