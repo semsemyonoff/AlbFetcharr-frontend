@@ -749,7 +749,8 @@ html[data-theme='light'] .btn-primary {
   width: 6px;
   height: 6px;
   border-radius: 2px;
-  background: var(--accent-grad);
+  /* Per-library color set inline via --lib-color; falls back to the accent. */
+  background: var(--lib-color, var(--accent-grad));
   flex-shrink: 0;
 }
 

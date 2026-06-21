@@ -312,7 +312,7 @@ export const I18N = {
     format_lossy_low: 'Lossy (low)',
     format_lossy_high: 'Lossy (high)',
     format_flac: 'FLAC',
-    format_default_ytdlp: 'Default (yt-dlp config)',
+    format_default_ytdlp: 'По умолчанию (конфиг yt-dlp)',
     step_select: 'Выбор',
     step_results: 'Результаты',
     step_download: 'Загрузка',

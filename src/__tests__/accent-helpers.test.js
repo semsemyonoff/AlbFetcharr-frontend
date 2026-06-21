@@ -2,8 +2,10 @@ import { describe, it, expect } from 'vitest';
 import {
   ACCENT_PALETTES,
   DEFAULT_ACCENT,
+  LIBRARY_SWATCHES,
   accentVars,
   applyAccent,
+  libraryColor,
   parseAccent,
 } from '../accent-helpers';
 import { I18N } from '../i18n';
@@ -63,6 +65,36 @@ describe('applyAccent', () => {
     expect(el.style['--accent-grad']).toBe(
       'linear-gradient(135deg, #ff7a45 0%, #ffcc00 100%)'
     );
+  });
+});
+
+describe('libraryColor', () => {
+  it('only ever returns colors from the logo palette', () => {
+    ['Music', 'Lossless', 'FLAC', 'Soundtracks', ''].forEach((name) => {
+      expect(LIBRARY_SWATCHES).toContain(libraryColor(name));
+    });
+  });
+
+  it('is deterministic — the same name maps to the same color', () => {
+    expect(libraryColor('Music')).toBe(libraryColor('Music'));
+    expect(libraryColor('Lossless')).toBe(libraryColor('Lossless'));
+  });
+
+  it('spreads distinct names across the palette', () => {
+    const names = ['Music', 'Lossless', 'FLAC', 'Soundtracks', 'Live', 'Vinyl'];
+    const colors = new Set(names.map(libraryColor));
+    // Not a strict guarantee, but these sample names should land on >1 swatch.
+    expect(colors.size).toBeGreaterThan(1);
+  });
+
+  it('derives swatches from the accent palettes with no duplicates', () => {
+    expect(LIBRARY_SWATCHES).toEqual([...new Set(ACCENT_PALETTES.flat())]);
+    expect(LIBRARY_SWATCHES.length).toBe(new Set(LIBRARY_SWATCHES).size);
+  });
+
+  it('handles non-string input without throwing', () => {
+    expect(LIBRARY_SWATCHES).toContain(libraryColor(undefined));
+    expect(LIBRARY_SWATCHES).toContain(libraryColor(null));
   });
 });
 

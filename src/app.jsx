@@ -249,7 +249,9 @@ export default function App() {
   // Lidarr fetch state
   const [fetchState, setFetchState] = React.useState('loading');
   const [albums, setAlbums] = React.useState([]);
-  const [lastSync, setLastSync] = React.useState('');
+  // Whether a wanted-list sync has completed. Kept as a flag (not a pre-built
+  // string) so the "last sync" label re-translates when the language changes.
+  const [hasSynced, setHasSynced] = React.useState(false);
   const [availableSources, setAvailableSources] = React.useState([]);
 
   const runFetch = React.useCallback(async () => {
@@ -269,13 +271,13 @@ export default function App() {
         const mapped = data.map((album) => mapWantedAlbum(album));
         setAlbums(mapped);
         setFetchState('ready');
-        setLastSync(I18N[lang].just_now);
+        setHasSynced(true);
       }
     } catch (err) {
       console.error('Failed to fetch wanted albums:', err);
       setFetchState('error');
     }
-  }, [lang]);
+  }, []);
 
   const fetchSources = React.useCallback(async () => {
     try {
@@ -852,7 +854,11 @@ export default function App() {
                 ? 'err'
                 : 'ok'
           }
-          lastSync={fetchState === 'ready' ? `${t.last_sync}: ${lastSync}` : ''}
+          lastSync={
+            fetchState === 'ready' && hasSynced
+              ? `${t.last_sync}: ${t.just_now}`
+              : ''
+          }
           inSettings={view === 'settings'}
           onSettingsToggle={() =>
             setView((v) => (v === 'settings' ? 'app' : 'settings'))

@@ -3,6 +3,7 @@ import { Icon } from './icons.jsx';
 import { sortAlbums, filterAlbums, paginate } from './select-helpers.js';
 import { Cover } from './cover.jsx';
 import { formatDuration, albumTypeLabel } from './wanted-helpers.js';
+import { libraryColor } from './accent-helpers.js';
 
 const SelectStep = ({
   t,
@@ -348,7 +349,14 @@ const SelectStep = ({
                   <td className="cell-num">{a.tracks}</td>
                   <td className="cell-num">{formatDuration(a.durationMs)}</td>
                   <td>
-                    {a.library && <span className="lib-tag">{a.library}</span>}
+                    {a.library && (
+                      <span
+                        className="lib-tag"
+                        style={{ '--lib-color': libraryColor(a.library) }}
+                      >
+                        {a.library}
+                      </span>
+                    )}
                   </td>
                 </tr>
               ))}
@@ -403,7 +411,14 @@ const SelectStep = ({
                       {albumTypeLabel(a.albumType, lang)}
                     </span>
                   )}
-                  {a.library && <span className="lib-tag">{a.library}</span>}
+                  {a.library && (
+                    <span
+                      className="lib-tag"
+                      style={{ '--lib-color': libraryColor(a.library) }}
+                    >
+                      {a.library}
+                    </span>
+                  )}
                   <div className="wt-card-sub">{subParts.join(' · ')}</div>
                 </div>
               </label>
