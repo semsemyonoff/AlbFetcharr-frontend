@@ -36,7 +36,7 @@ export const LYRICS_CHOICES = [
 // ── yt-dlp format choices ───────────────────────────────────────────────────
 
 export const YTDLP_FORMAT_CHOICES = [
-  { value: 'best', label: 'Best · source' },
+  { value: 'best', labelKey: 'ytdlp_fmt_best' },
   { value: 'opus', label: 'OPUS' },
   { value: 'm4a', label: 'M4A' },
   { value: 'mp3', label: 'MP3' },
@@ -183,6 +183,7 @@ export const SETTINGS_FIELDS = [
     key: 'yandex_clear_comments',
     control: 'toggle',
     labelKey: 'dl_clear_comments',
+    hintKey: 'dl_clear_comments_hint',
     section: 'download',
     group: 'dl-yandex',
   },
@@ -222,6 +223,7 @@ export const SETTINGS_FIELDS = [
     key: 'yandex_compat_level',
     control: 'segmented',
     labelKey: 'adv_compat',
+    hintKey: 'adv_compat_hint',
     choices: COMPAT_LEVEL_CHOICES,
     section: 'advanced',
     group: 'adv-yandex',
