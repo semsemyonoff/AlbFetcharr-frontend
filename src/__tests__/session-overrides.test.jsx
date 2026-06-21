@@ -281,6 +281,29 @@ describe('reset', () => {
     );
     expect(flacBtn?.getAttribute('aria-checked')).toBe('true');
   });
+
+  it('resetting the format override also drops the quality override', () => {
+    // Global default mp3/320; override both format and quality, then reset the
+    // format — the quality override must be dropped too, otherwise it stays at a
+    // value (128) that is not a valid preset for the restored mp3 format.
+    const { container } = renderOpen(makeCommitted(), {
+      ytdlp_format: 'opus',
+      ytdlp_quality: '128',
+    });
+
+    const formatSelect = Array.from(container.querySelectorAll('select')).find(
+      (s) => s.value === 'opus'
+    );
+    const formatField = formatSelect.closest('.field');
+    fireEvent.click(formatField.querySelector('.reset-btn'));
+
+    // Format reverts to the global default (mp3) and quality falls back to the
+    // consistent global 320 (a valid mp3 preset), not the stale 128.
+    const selects = Array.from(container.querySelectorAll('select'));
+    expect(selects.find((s) => s.value === 'mp3')).toBeTruthy();
+    expect(selects.find((s) => s.value === '320')).toBeTruthy();
+    expect(selects.find((s) => s.value === '128')).toBeFalsy();
+  });
 });
 
 // ── Overridden count ──────────────────────────────────────────────────────────

@@ -48,6 +48,10 @@ export function ThisRunPanel({ t, committed, overrides, setOverrides }) {
     setOverrides((o) => {
       const n = { ...o };
       delete n[key];
+      // Resetting the format reverts it to the global default; a quality
+      // override may not be a valid preset for that format, so drop it too and
+      // fall back to the (consistent) global default pair.
+      if (key === 'ytdlp_format') delete n.ytdlp_quality;
       return n;
     });
 

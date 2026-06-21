@@ -436,6 +436,37 @@ describe('SettingsScreen — validation', () => {
       expect(saveBtnAfter.disabled).toBe(false);
     }
   });
+
+  it('a legacy invalid committed value does not block saving an unrelated field', async () => {
+    // Pre-trim DB value (flac is no longer a ytdlp_format choice). It resolves
+    // fine on the backend and must NOT make hasErrors true / disable saving an
+    // unrelated, untouched-but-edited field.
+    const onSave = vi.fn().mockResolvedValue(undefined);
+    const committed = makeCommitted({
+      ytdlp_format: makeItem('ytdlp_format', {
+        type: 'enum',
+        value: 'flac',
+        source: 'db',
+      }),
+    });
+    const { container } = renderScreen({ onSave, committed });
+
+    // Edit an unrelated field (lidarr_url) to a valid value.
+    const input = container.querySelector(
+      'input[placeholder="http://lidarr:8686"]'
+    );
+    fireEvent.change(input, { target: { value: 'http://lidarr:9999' } });
+
+    const saveBtn = container.querySelector('.btn.btn-primary');
+    expect(saveBtn).toBeTruthy();
+    expect(saveBtn.disabled).toBe(false);
+
+    fireEvent.click(saveBtn);
+    await waitFor(() => expect(onSave).toHaveBeenCalledOnce());
+    const [puts] = onSave.mock.calls[0];
+    // Only the edited field is written; the legacy flac value is untouched.
+    expect(puts).toEqual({ lidarr_url: 'http://lidarr:9999' });
+  });
 });
 
 // ── Yandex warning ────────────────────────────────────────────────────────────
@@ -717,6 +748,43 @@ describe('SettingsScreen — ytdlp quality preset select', () => {
       (s) => s.value === '160'
     );
     expect(qualitySelect).toBeTruthy();
+  });
+
+  it('resetting a db-saved format also resets a db-saved quality', async () => {
+    const onSave = vi.fn().mockResolvedValue(undefined);
+    const committed = makeCommitted({
+      ytdlp_format: makeItem('ytdlp_format', {
+        type: 'enum',
+        value: 'mp3',
+        source: 'db',
+      }),
+      ytdlp_quality: makeItem('ytdlp_quality', {
+        type: 'int',
+        value: '320',
+        source: 'db',
+      }),
+    });
+    const { container } = renderScreen({ onSave, committed });
+
+    // The format Field's reset button (db-sourced) — find the field whose value
+    // is the format select and click its reset.
+    const formatSelect = Array.from(container.querySelectorAll('select')).find(
+      (s) => s.value === 'mp3'
+    );
+    const formatField = formatSelect.closest('.field');
+    const resetBtn = formatField.querySelector('.reset-btn');
+    expect(resetBtn).toBeTruthy();
+    fireEvent.click(resetBtn);
+
+    const saveBtn = container.querySelector('.btn.btn-primary');
+    fireEvent.click(saveBtn);
+
+    await waitFor(() => expect(onSave).toHaveBeenCalledOnce());
+    const [, deletes] = onSave.mock.calls[0];
+    // Both keys reset so the backend resolves a consistent format/quality pair
+    // (otherwise the stale 320 is blank under opus presets after reload).
+    expect(deletes).toContain('ytdlp_format');
+    expect(deletes).toContain('ytdlp_quality');
   });
 });
 

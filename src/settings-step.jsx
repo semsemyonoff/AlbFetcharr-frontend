@@ -114,16 +114,25 @@ export function SettingsScreen({
   const errors = useMemo(() => {
     const errs = {};
 
+    // Validate only the keys this save would actually write (the PUT set) —
+    // never every committed value. A legacy stored value the user hasn't touched
+    // (e.g. a `ytdlp_format` of `flac` from before the choices were trimmed) is
+    // resolved by the backend and only rejected if re-saved; flagging it here
+    // would set hasErrors and block unrelated saves with no visible error.
+    const { puts } = diffDraft(committed, draft, resetKeys);
+
     // Specialized string validators — stricter than the bare `str` type.
-    if (urlError(effVal('lidarr_url'))) errs.lidarr_url = t.err_url;
+    if ('lidarr_url' in puts && urlError(puts.lidarr_url))
+      errs.lidarr_url = t.err_url;
 
     // Minimal validation derived from the backend-provided type for every
-    // surfaced field (int bounds, enum membership, cover_resolution shape).
+    // surfaced field being written (int bounds, enum membership, cover shape).
     for (const field of SETTINGS_FIELDS) {
       if (field.control === 'readonly') continue;
+      if (!(field.key in puts)) continue;
       const item = committed[field.key];
       if (!item) continue;
-      const code = typeError(item.type, effVal(field.key), {
+      const code = typeError(item.type, puts[field.key], {
         min: field.min,
         max: field.max,
         choices: (field.choices || []).map((c) => c.value),
@@ -133,7 +142,7 @@ export function SettingsScreen({
 
     return errs;
     // eslint-disable-next-line react-hooks/exhaustive-deps
-  }, [draft, committed, t]);
+  }, [draft, committed, resetKeys, t]);
 
   const hasErrors = Object.keys(errors).length > 0;
 
@@ -705,7 +714,22 @@ export function SettingsScreen({
                           source={effSrc(field.key)}
                           t={t}
                           canReset={canReset(field.key)}
-                          onReset={() => resetField(field.key)}
+                          onReset={() => {
+                            resetField(field.key);
+                            // Resetting the format reverts it to env/default; a
+                            // customized quality may no longer be a valid preset
+                            // for that format (blank dropdown after reload), so
+                            // reset it too and let the backend resolve a
+                            // consistent pair.
+                            const qualityCustomized =
+                              committed.ytdlp_quality?.source === 'db' ||
+                              Object.prototype.hasOwnProperty.call(
+                                draft,
+                                'ytdlp_quality'
+                              );
+                            if (qualityCustomized) resetField('ytdlp_quality');
+                          }}
+                          error={errors[field.key]}
                         >
                           <Select
                             value={value ?? ''}
@@ -741,6 +765,7 @@ export function SettingsScreen({
                           t={t}
                           canReset={canReset(field.key)}
                           onReset={() => resetField(field.key)}
+                          error={errors[field.key]}
                         >
                           <Select
                             value={value ?? ''}
