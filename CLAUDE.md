@@ -161,8 +161,13 @@ Key modules:
 - **`settings-catalog.js`** — the only place that maps backend registry keys to
   UI controls (label, group, control type, choices). `SETTINGS_FIELDS` covers
   every surfaced global key; `SESSION_FIELDS` covers every Tier-3 session key for
-  the "This run" panel. Groups follow the backend's `provider` tag (Yandex knobs
-  stay under Yandex; yt-dlp under yt-dlp — no cross-source "general" group).
+  the "This run" panel. A dedicated **Environment** section (last in nav,
+  `id: 'environment'`) holds the four env-only readonly keys (`ytmusic_oauth_file`,
+  `ytdlp_cookies_file`, `lidarr_import_path`, `library_map`) with `control:
+  'readonly'` — rendered without inputs or reset buttons, showing only the resolved
+  value, origin badge, and (for the two file-path keys) a `file_status` badge from
+  the backend. Groups follow the backend's `provider` tag (Yandex knobs stay under
+  Yandex; yt-dlp under yt-dlp — no cross-source "general" group).
 - **`settings-helpers.js`** — pure logic: `indexSettings`, `diffDraft` (→ `{puts,
 deletes}`), `effectiveValue`/`effectiveSource`, `buildOverridesPayload`, value
   codecs (`boolToStr`/`strToBool`, `coverResToUi`/`uiToCoverRes`,
@@ -192,7 +197,10 @@ their contracts):
 - `GET /api/config` — default language / theme / `encryption_enabled` (whether
   `ALBFETCHARR_SECRET_KEY` is set; controls SecretField's blocked state).
 - `GET /api/settings` — array of `{key, group, type, scope, secret, source,
-value, is_set, preview}` for every surfaced setting.
+value, is_set, preview, readonly, file_status}` for every surfaced setting.
+  `readonly: bool` gates PUT writes in the backend; `file_status` is populated only
+  for `ytmusic_oauth_file` (`ok`/`missing`/`invalid`) and `ytdlp_cookies_file`
+  (`found`/`missing`), `null` otherwise.
 - `PUT /api/settings` body `{key: stringValue}` — upsert one or more settings.
 - `DELETE /api/settings/<key>` — reset one setting to env/default.
 - `GET /api/wanted` — Lidarr wanted/missing albums; returns array of
