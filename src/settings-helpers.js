@@ -138,11 +138,6 @@ export function uiToCoverRes({ number, original }) {
   return String(number);
 }
 
-/** @deprecated Use isPassthroughYtdlp instead. Left for callers being updated in Task 6. */
-export function isLosslessYtdlp(fmt) {
-  return fmt === 'flac' || fmt === 'wav';
-}
-
 /** Returns true when a yt-dlp format is passthrough (no re-encode → quality field hidden). */
 export function isPassthroughYtdlp(fmt) {
   return fmt === 'best';

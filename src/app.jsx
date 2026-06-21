@@ -28,7 +28,7 @@ import {
   indexSettings,
   buildOverridesPayload,
   typeError,
-  isLosslessYtdlp,
+  isPassthroughYtdlp,
 } from './settings-helpers.js';
 import { SESSION_FIELDS } from './settings-catalog.js';
 import { mapWantedAlbum, deriveLibraries } from './wanted-helpers.js';
@@ -611,11 +611,12 @@ export default function App() {
 
     // Block the download if any "This run" override is invalid — otherwise the
     // bad value would be sent and rejected by the backend with a 422.
-    // ytdlp_quality is inactive (and its error hidden in the panel) when the
-    // effective format is lossless, so skip it to match what the user can see.
+    // ytdlp_quality is inactive (and its field hidden in the panel) when the
+    // effective format is passthrough ("best"), so skip it to match what the
+    // user can see.
     const effectiveFormat =
       runOverrides.ytdlp_format ?? committedSettings.ytdlp_format?.value;
-    const qualityInactive = isLosslessYtdlp(effectiveFormat);
+    const qualityInactive = isPassthroughYtdlp(effectiveFormat);
     const sessionInvalid = SESSION_FIELDS.some((f) => {
       if (f.key === 'ytdlp_quality' && qualityInactive) return false;
       const item = committedSettings[f.key];

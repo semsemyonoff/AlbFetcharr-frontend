@@ -164,14 +164,22 @@ Key modules:
   the "This run" panel. A dedicated **Environment** section (last in nav,
   `id: 'environment'`) holds the four env-only readonly keys (`ytmusic_oauth_file`,
   `ytdlp_cookies_file`, `lidarr_import_path`, `library_map`) with `control:
-  'readonly'` — rendered without inputs or reset buttons, showing only the resolved
+'readonly'` — rendered without inputs or reset buttons, showing only the resolved
   value, origin badge, and (for the two file-path keys) a `file_status` badge from
   the backend. Groups follow the backend's `provider` tag (Yandex knobs stay under
   Yandex; yt-dlp under yt-dlp — no cross-source "general" group).
 - **`settings-helpers.js`** — pure logic: `indexSettings`, `diffDraft` (→ `{puts,
 deletes}`), `effectiveValue`/`effectiveSource`, `buildOverridesPayload`, value
   codecs (`boolToStr`/`strToBool`, `coverResToUi`/`uiToCoverRes`,
-  `libraryMapToUi`/`uiToLibraryMap`), and advisory validators.
+  `libraryMapToUi`/`uiToLibraryMap`), and advisory validators. Per-format yt-dlp
+  quality presets live here too: `YTDLP_QUALITY_PRESETS` (format → ordered kbps
+  options plus a default), `qualityPresetsFor(format)` (returns `null` for
+  passthrough), `snapQuality(format, current)` (snaps to the format default when
+  the current kbps isn't a valid preset), and `isPassthroughYtdlp(format)` (true
+  only for `best`). The stored value stays an int (kbps) — presets are a pure UI
+  concern; `ytdlp_quality` renders as a preset `Select` (not a number input), is
+  hidden for `best`, and re-snaps on format change. Both the Settings screen and
+  the "This run" panel apply this.
 - **`settings-fields.jsx`** — props-driven atomic controls: `OriginBadge`,
   `ResetBtn`, `Toggle`, `Segmented`, `Select`, `TextInput`, `NumberUnit`,
   `SecretField` (blocked/set/env/unset/editing state machine from
