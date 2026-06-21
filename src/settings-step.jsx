@@ -27,11 +27,10 @@ import {
   strToBool,
   coverResToUi,
   uiToCoverRes,
-  isLosslessYtdlp,
+  qualityPresetsFor,
+  snapQuality,
   displayValue,
   libraryMapToUi,
-  uiToLibraryMap,
-  libraryMapError,
   urlError,
   typeError,
 } from './settings-helpers';
@@ -64,19 +63,6 @@ export function SettingsScreen({
   const [advOpen, setAdvOpen] = useState(false);
   const [saveError, setSaveError] = useState(null);
   const [saving, setSaving] = useState(false);
-
-  // Display state for the library_map textarea while the user is actively editing.
-  // draft.library_map stores the wire form (comma-separated); libMapInput is the UI form.
-  const [libMapInput, setLibMapInput] = useState(() =>
-    libraryMapToUi(committed.library_map?.value ?? '')
-  );
-
-  // Derive displayed text from committed when not being edited, from input state when edited.
-  // This avoids setState-in-effect: committed changes (after save/reload) are reflected
-  // automatically because this reads committed directly.
-  const libMapText = Object.prototype.hasOwnProperty.call(draft, 'library_map')
-    ? libMapInput
-    : libraryMapToUi(committed.library_map?.value ?? '');
 
   // ── Field helpers ──────────────────────────────────────────────────────────
 
@@ -130,11 +116,11 @@ export function SettingsScreen({
 
     // Specialized string validators — stricter than the bare `str` type.
     if (urlError(effVal('lidarr_url'))) errs.lidarr_url = t.err_url;
-    if (libraryMapError(libMapText)) errs.library_map = t.err_map;
 
     // Minimal validation derived from the backend-provided type for every
     // surfaced field (int bounds, enum membership, cover_resolution shape).
     for (const field of SETTINGS_FIELDS) {
+      if (field.control === 'readonly') continue;
       const item = committed[field.key];
       if (!item) continue;
       const code = typeError(item.type, effVal(field.key), {
@@ -147,7 +133,7 @@ export function SettingsScreen({
 
     return errs;
     // eslint-disable-next-line react-hooks/exhaustive-deps
-  }, [draft, libMapText, committed, t]);
+  }, [draft, committed, t]);
 
   const hasErrors = Object.keys(errors).length > 0;
 
@@ -171,6 +157,7 @@ export function SettingsScreen({
   const lidarrRef = useRef(null);
   const downloadRef = useRef(null);
   const advancedRef = useRef(null);
+  const environmentRef = useRef(null);
 
   // Stable map: id → ref object (built once; no render-time ref access)
   const sectionRefMap = useRef({
@@ -178,10 +165,11 @@ export function SettingsScreen({
     lidarr: lidarrRef,
     download: downloadRef,
     advanced: advancedRef,
+    environment: environmentRef,
   });
 
   useEffect(() => {
-    const ids = ['sources', 'lidarr', 'download', 'advanced'];
+    const ids = ['sources', 'lidarr', 'download', 'advanced', 'environment'];
     const refs = sectionRefMap.current;
     const onScroll = () => {
       let current = 'sources';
@@ -228,7 +216,6 @@ export function SettingsScreen({
   const handleDiscard = () => {
     setDraft({});
     setResetKeys(new Set());
-    setLibMapInput(libraryMapToUi(committed.library_map?.value ?? ''));
     setSaveError(null);
   };
 
@@ -309,10 +296,34 @@ export function SettingsScreen({
       );
     }
 
+    if (control === 'readonly') {
+      const fileStatus = committedItem?.file_status ?? null;
+      const displayVal =
+        key === 'library_map'
+          ? libraryMapToUi(value ?? '')
+          : displayValue(value);
+      return (
+        <div key={key} className="field is-readonly">
+          <div className="field-top">
+            <span className="field-label">{label}</span>
+            <OriginBadge source={committedItem?.source ?? 'default'} t={t} />
+          </div>
+          <div className="field-control">
+            <div className="readonly-value mono">
+              {fileStatus && (
+                <span className={`status-badge status-${fileStatus}`}>
+                  {t[`status_${fileStatus}`] ?? fileStatus}
+                </span>
+              )}
+              <span>{displayVal || '—'}</span>
+            </div>
+          </div>
+          {hint && <div className="field-hint">{hint}</div>}
+        </div>
+      );
+    }
+
     if (control === 'number') {
-      // ytdlp_quality: disabled when format is lossless
-      const lossless =
-        key === 'ytdlp_quality' && isLosslessYtdlp(effVal('ytdlp_format'));
       return (
         <Field
           key={key}
@@ -322,14 +333,12 @@ export function SettingsScreen({
           canReset={can_reset}
           onReset={onReset}
           hint={hint}
-          error={lossless ? undefined : error}
-          disabled={lossless}
+          error={error}
         >
           <NumberUnit
-            value={lossless ? '' : (value ?? '')}
+            value={value ?? ''}
             unit={unit}
-            disabled={lossless}
-            error={!lossless && !!error}
+            error={!!error}
             onChange={(n) => onChange(n === '' ? '' : String(n))}
           />
         </Field>
@@ -370,34 +379,6 @@ export function SettingsScreen({
             t={t}
             onSet={(v) => setField(key, v)}
             onClear={() => resetField(key)}
-          />
-        </Field>
-      );
-    }
-
-    // text — with special handling for library_map
-    if (key === 'library_map') {
-      return (
-        <Field
-          key={key}
-          label={label}
-          source={source}
-          t={t}
-          canReset={can_reset}
-          onReset={onReset}
-          hint={hint}
-          error={error}
-        >
-          <textarea
-            className={`set-input mono${error ? ' invalid' : ''}`}
-            value={libMapText}
-            rows={3}
-            placeholder="/lidarr/path = /albfetcharr/path"
-            onChange={(e) => {
-              const text = e.target.value;
-              setLibMapInput(text);
-              setField('library_map', uiToLibraryMap(text));
-            }}
           />
         </Field>
       );
@@ -565,21 +546,7 @@ export function SettingsScreen({
                 </div>
                 {youtubeOn && (
                   <div className="source-card-body">
-                    <Field
-                      label={t.yt_oauth_path}
-                      source={effSrc('ytmusic_oauth_file')}
-                      t={t}
-                      canReset={canReset('ytmusic_oauth_file')}
-                      onReset={() => resetField('ytmusic_oauth_file')}
-                      hint={t.yt_oauth_help}
-                    >
-                      <TextInput
-                        value={displayValue(effVal('ytmusic_oauth_file'))}
-                        mono
-                        placeholder="/config/oauth.json"
-                        onChange={(v) => setField('ytmusic_oauth_file', v)}
-                      />
-                    </Field>
+                    <div className="field-hint">{t.yt_oauth_help}</div>
                     <div className="field-grid">
                       <Field
                         label={t.yt_client_id}
@@ -689,25 +656,7 @@ export function SettingsScreen({
                     onClear={() => resetField('lidarr_api_key')}
                   />
                 </Field>
-                <Field
-                  label={t.lidarr_import}
-                  source={effSrc('lidarr_import_path')}
-                  t={t}
-                  canReset={canReset('lidarr_import_path')}
-                  onReset={() => resetField('lidarr_import_path')}
-                >
-                  <TextInput
-                    value={displayValue(effVal('lidarr_import_path'))}
-                    mono
-                    placeholder="/downloads"
-                    onChange={(v) => setField('lidarr_import_path', v)}
-                  />
-                </Field>
               </div>
-              {/* library_map rendered separately (textarea) */}
-              {renderField(
-                fieldsForSection('lidarr').find((f) => f.key === 'library_map')
-              )}
             </div>
           </section>
 
@@ -746,12 +695,8 @@ export function SettingsScreen({
                 </div>
                 <div className="field-grid">
                   {fieldsForGroup('download', 'dl-ytdlp').map((field) => {
-                    const lossless =
-                      field.key === 'ytdlp_quality' &&
-                      isLosslessYtdlp(ytdlpFormat);
-                    if (field.key === 'ytdlp_quality') {
+                    if (field.key === 'ytdlp_format') {
                       const label = t[field.labelKey] ?? field.labelKey;
-                      const unit = field.unit ? t[field.unit] : undefined;
                       const value = effVal(field.key);
                       return (
                         <Field
@@ -761,17 +706,47 @@ export function SettingsScreen({
                           t={t}
                           canReset={canReset(field.key)}
                           onReset={() => resetField(field.key)}
-                          disabled={lossless}
-                          error={lossless ? undefined : errors[field.key]}
                         >
-                          <NumberUnit
-                            value={lossless ? '' : (value ?? '')}
-                            unit={unit}
-                            disabled={lossless}
-                            error={!lossless && !!errors[field.key]}
-                            onChange={(n) =>
-                              setField(field.key, n === '' ? '' : String(n))
-                            }
+                          <Select
+                            value={value ?? ''}
+                            options={field.choices}
+                            onChange={(newFmt) => {
+                              setField(field.key, newFmt);
+                              const snapped = snapQuality(
+                                newFmt,
+                                effVal('ytdlp_quality')
+                              );
+                              if (snapped !== null)
+                                setField('ytdlp_quality', snapped);
+                            }}
+                            t={t}
+                          />
+                        </Field>
+                      );
+                    }
+                    if (field.key === 'ytdlp_quality') {
+                      const presets = qualityPresetsFor(ytdlpFormat);
+                      if (!presets) return null;
+                      const label = t[field.labelKey] ?? field.labelKey;
+                      const value = effVal(field.key);
+                      const options = presets.options.map((kbps) => ({
+                        value: String(kbps),
+                        label: String(kbps),
+                      }));
+                      return (
+                        <Field
+                          key={field.key}
+                          label={label}
+                          source={effSrc(field.key)}
+                          t={t}
+                          canReset={canReset(field.key)}
+                          onReset={() => resetField(field.key)}
+                        >
+                          <Select
+                            value={value ?? ''}
+                            options={options}
+                            onChange={(v) => setField(field.key, v)}
+                            t={t}
                           />
                         </Field>
                       );
@@ -861,6 +836,21 @@ export function SettingsScreen({
                 )}
               </div>
             )}
+          </section>
+
+          {/* §5 Environment — read-only container-setup keys */}
+          <section className="set-section" ref={environmentRef}>
+            <div className="set-section-head">
+              <h3>{t.nav_environment}</h3>
+              <span className="sec-desc">
+                {t.env_subtitle ?? 'Set at container setup · read-only'}
+              </span>
+            </div>
+            <div className="set-section-body">
+              <div className="field-grid">
+                {fieldsForSection('environment').map(renderField)}
+              </div>
+            </div>
           </section>
         </div>
       </div>

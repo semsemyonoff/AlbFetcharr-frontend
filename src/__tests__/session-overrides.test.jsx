@@ -317,7 +317,7 @@ describe('overridden count', () => {
       <ThisRunPanel
         t={t}
         committed={makeCommitted()}
-        overrides={{ yandex_quality: '0', ytdlp_format: 'flac' }}
+        overrides={{ yandex_quality: '0', ytdlp_format: 'opus' }}
         setOverrides={() => {}}
       />
     );
@@ -365,34 +365,60 @@ describe('yandex_cover_resolution', () => {
   });
 });
 
-// ── ytdlp_quality disabled when lossless format is selected ──────────────────
+// ── ytdlp_quality — preset select and passthrough hiding ─────────────────────
 
-describe('ytdlp_quality disabled for lossless format', () => {
-  it('quality input is disabled when committed format is lossless', () => {
+describe('ytdlp_quality preset select', () => {
+  it('quality field is hidden when format is "best" (passthrough)', () => {
     const { container } = renderOpen(
-      makeCommitted({ ytdlp_format: makeItem('ytdlp_format', 'flac') })
+      makeCommitted({ ytdlp_format: makeItem('ytdlp_format', 'best') })
     );
-    expect(container.querySelector('.num-unit.is-disabled')).toBeTruthy();
+    // No num-unit should be rendered
+    expect(container.querySelector('.num-unit')).toBeNull();
+    // The yt-dlp quality label specifically should not be present
+    const qualityLabelText = t.dl_ytdlp_quality;
+    const labels = container.querySelectorAll('.field-label');
+    const found = Array.from(labels).find(
+      (el) => el.textContent === qualityLabelText
+    );
+    expect(found).toBeFalsy();
   });
 
-  it('quality input is enabled when committed format is not lossless', () => {
+  it('quality field is a select (not NumberUnit) when format is "opus"', () => {
     const { container } = renderOpen(
-      makeCommitted({ ytdlp_format: makeItem('ytdlp_format', 'mp3') })
+      makeCommitted({ ytdlp_format: makeItem('ytdlp_format', 'opus') })
     );
-    expect(container.querySelector('.num-unit.is-disabled')).toBeNull();
+    expect(container.querySelector('.num-unit')).toBeNull();
+    // There should be at least two selects: format and quality
+    const selects = container.querySelectorAll('select');
+    expect(selects.length).toBeGreaterThanOrEqual(2);
   });
 
-  it('quality becomes disabled when format is overridden to wav', () => {
-    const { container } = renderOpen(makeCommitted(), { ytdlp_format: 'wav' });
-    expect(container.querySelector('.num-unit.is-disabled')).toBeTruthy();
+  it('format change to "best" hides quality', () => {
+    const { container } = renderOpen();
+    // Committed format is 'mp3', change to 'best'
+    const formatSelect = container.querySelector('select');
+    expect(formatSelect).toBeTruthy();
+    fireEvent.change(formatSelect, { target: { value: 'best' } });
+    expect(container.querySelector('.num-unit')).toBeNull();
   });
 
-  it('quality re-enables when format override switches to non-lossless', () => {
-    const { container } = renderOpen(
-      makeCommitted({ ytdlp_format: makeItem('ytdlp_format', 'flac') }),
-      { ytdlp_format: 'mp3' }
+  it('format change snaps quality to a valid preset', () => {
+    // mp3 committed quality is 320; switching to opus snaps to 160 (opus default)
+    const { container } = renderOpen(makeCommitted(), {
+      ytdlp_format: 'mp3',
+      ytdlp_quality: '320',
+    });
+    // Change format to opus
+    const formatSelect = Array.from(container.querySelectorAll('select')).find(
+      (s) => s.value === 'mp3'
     );
-    expect(container.querySelector('.num-unit.is-disabled')).toBeNull();
+    expect(formatSelect).toBeTruthy();
+    fireEvent.change(formatSelect, { target: { value: 'opus' } });
+    // After snap, quality should be 160 (opus default, since 320 not in opus presets)
+    const qualitySelect = Array.from(container.querySelectorAll('select')).find(
+      (s) => s.value === '160'
+    );
+    expect(qualitySelect).toBeTruthy();
   });
 });
 
@@ -433,33 +459,7 @@ describe('all session fields rendered', () => {
 // ── Validation (type + bounds) ────────────────────────────────────────────────
 
 describe('validation', () => {
-  it('flags non-numeric input in ytdlp_quality', () => {
-    const { container } = renderOpen();
-    expect(container.querySelector('.field-error')).toBeNull();
-
-    const input = container.querySelector('.num-unit input');
-    fireEvent.change(input, { target: { value: 'abc' } });
-    expect(container.querySelector('.field-error')).toBeTruthy();
-    expect(container.querySelector('.num-unit.invalid')).toBeTruthy();
-  });
-
-  it('flags ytdlp_quality above the max bound', () => {
-    const { container } = renderOpen();
-    const input = container.querySelector('.num-unit input');
-    fireEvent.change(input, { target: { value: '5000' } });
-    expect(container.querySelector('.field-error')).toBeTruthy();
-  });
-
-  it('accepts a valid ytdlp_quality with no error', () => {
-    const { container } = renderOpen();
-    const input = container.querySelector('.num-unit input');
-    fireEvent.change(input, { target: { value: '256' } });
-    expect(container.querySelector('.field-error')).toBeNull();
-  });
-
-  // "disabled quality for lossless format" test removed: flac/wav no longer in
-  // the format enum. Task 6 will add a "best passthrough → quality hidden" test
-  // once isPassthroughYtdlp is wired into the session-overrides component.
+  // ytdlp_quality is now a preset Select; no free-form number validation needed.
 
   it('flags a negative cover resolution', () => {
     const { container } = renderOpen();

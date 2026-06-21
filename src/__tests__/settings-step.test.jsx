@@ -270,10 +270,13 @@ describe('SettingsScreen — save puts', () => {
     );
     fireEvent.change(urlInput, { target: { value: 'http://newlidarr:9090' } });
 
-    const importInput = container.querySelector(
-      'input[placeholder="/downloads"]'
+    // Open advanced to access another editable field (yandex_delay number input)
+    const advBtn = container.querySelector('.adv-toggle');
+    fireEvent.click(advBtn);
+    const numInputs = container.querySelectorAll(
+      '.set-section-body .num-unit input'
     );
-    fireEvent.change(importInput, { target: { value: '/new/downloads' } });
+    fireEvent.change(numInputs[0], { target: { value: '5' } });
 
     const saveBtn = container.querySelector('.btn.btn-primary');
     fireEvent.click(saveBtn);
@@ -281,7 +284,7 @@ describe('SettingsScreen — save puts', () => {
     await waitFor(() => expect(onSave).toHaveBeenCalledOnce());
     const [puts] = onSave.mock.calls[0];
     expect(puts.lidarr_url).toBe('http://newlidarr:9090');
-    expect(puts.lidarr_import_path).toBe('/new/downloads');
+    expect(Object.keys(puts).length).toBeGreaterThan(1);
   });
 });
 
@@ -580,10 +583,9 @@ describe('SettingsScreen — section nav', () => {
 describe('SettingsScreen — advanced section', () => {
   it('is collapsed by default', () => {
     const { container } = renderScreen();
-    // The set-section-body inside the advanced section should not be visible
-    const advSection = Array.from(
-      container.querySelectorAll('.set-section')
-    ).at(-1);
+    // Find the advanced section by its toggle button
+    const advToggle = container.querySelector('.adv-toggle');
+    const advSection = advToggle.closest('.set-section');
     expect(advSection.querySelector('.set-section-body')).toBeNull();
   });
 
@@ -591,9 +593,7 @@ describe('SettingsScreen — advanced section', () => {
     const { container } = renderScreen();
     const advToggle = container.querySelector('.adv-toggle');
     fireEvent.click(advToggle);
-    const advSection = Array.from(
-      container.querySelectorAll('.set-section')
-    ).at(-1);
+    const advSection = advToggle.closest('.set-section');
     expect(advSection.querySelector('.set-section-body')).toBeTruthy();
   });
 });
@@ -650,5 +650,130 @@ describe('SettingsScreen — back button', () => {
     expect(backBtn).toBeTruthy();
     fireEvent.click(backBtn);
     expect(onBack).toHaveBeenCalledOnce();
+  });
+});
+
+// ── ytdlp quality — preset select ────────────────────────────────────────────
+
+describe('SettingsScreen — ytdlp quality preset select', () => {
+  it('renders quality as a Select (not NumberUnit) for opus format', () => {
+    const committed = makeCommitted({
+      ytdlp_format: makeItem('ytdlp_format', {
+        type: 'enum',
+        value: 'opus',
+        source: 'default',
+      }),
+      ytdlp_quality: makeItem('ytdlp_quality', {
+        type: 'int',
+        value: '160',
+        source: 'default',
+      }),
+    });
+    const { container } = renderScreen({ committed });
+    expect(container.querySelector('.num-unit')).toBeNull();
+    const selects = container.querySelectorAll('select');
+    expect(selects.length).toBeGreaterThan(0);
+  });
+
+  it('hides quality field for "best" format', () => {
+    const committed = makeCommitted({
+      ytdlp_format: makeItem('ytdlp_format', {
+        type: 'enum',
+        value: 'best',
+        source: 'default',
+      }),
+    });
+    const { container } = renderScreen({ committed });
+    const label = t['dl_ytdlp_quality'];
+    const fieldLabels = container.querySelectorAll('.field-label');
+    const found = Array.from(fieldLabels).find((el) =>
+      el.textContent.includes(label)
+    );
+    expect(found).toBeFalsy();
+  });
+
+  it('format change snaps quality to a valid preset', () => {
+    const committed = makeCommitted({
+      ytdlp_format: makeItem('ytdlp_format', {
+        type: 'enum',
+        value: 'mp3',
+        source: 'default',
+      }),
+      ytdlp_quality: makeItem('ytdlp_quality', {
+        type: 'int',
+        value: '320',
+        source: 'default',
+      }),
+    });
+    const { container } = renderScreen({ committed });
+    // The format select should be present — find it by its current value
+    const formatSelect = Array.from(container.querySelectorAll('select')).find(
+      (s) => s.value === 'mp3'
+    );
+    expect(formatSelect).toBeTruthy();
+    fireEvent.change(formatSelect, { target: { value: 'opus' } });
+    // Quality should be snapped to opus default (160) since 320 is not in opus presets
+    const qualitySelect = Array.from(container.querySelectorAll('select')).find(
+      (s) => s.value === '160'
+    );
+    expect(qualitySelect).toBeTruthy();
+  });
+});
+
+// ── Environment section — read-only rendering ─────────────────────────────────
+
+describe('SettingsScreen — Environment section', () => {
+  it('renders a section with class "set-section" for environment', () => {
+    const { container } = renderScreen();
+    const sections = container.querySelectorAll('.set-section');
+    expect(sections.length).toBe(5);
+  });
+
+  it('renders the four environment keys as readonly fields (no inputs)', () => {
+    const { container } = renderScreen();
+    // Find the environment section — it is the last set-section
+    const envSection = Array.from(
+      container.querySelectorAll('.set-section')
+    ).at(-1);
+    expect(envSection).toBeTruthy();
+    const readonlyFields = envSection.querySelectorAll('.is-readonly');
+    expect(readonlyFields.length).toBe(4);
+  });
+
+  it('readonly environment fields have no text or number inputs', () => {
+    const { container } = renderScreen();
+    const envSection = Array.from(
+      container.querySelectorAll('.set-section')
+    ).at(-1);
+    const inputs = envSection.querySelectorAll('input, textarea, select');
+    expect(inputs.length).toBe(0);
+  });
+
+  it('shows a file_status badge when the committed item has file_status', () => {
+    const committed = makeCommitted({
+      ytmusic_oauth_file: makeItem('ytmusic_oauth_file', {
+        value: '/config/oauth.json',
+        source: 'env',
+        file_status: 'ok',
+      }),
+    });
+    const { container } = renderScreen({ committed });
+    const badge = container.querySelector('.status-badge');
+    expect(badge).toBeTruthy();
+    expect(badge.className).toContain('status-ok');
+  });
+
+  it('shows the committed value for import path', () => {
+    const committed = makeCommitted({
+      lidarr_import_path: makeItem('lidarr_import_path', {
+        value: '/downloads/music',
+        source: 'env',
+      }),
+    });
+    const { container } = renderScreen({ committed });
+    const envSection = Array.from(
+      container.querySelectorAll('.set-section')
+    ).at(-1);
+    expect(envSection.textContent).toContain('/downloads/music');
   });
 });
