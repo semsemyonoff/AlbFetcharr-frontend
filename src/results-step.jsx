@@ -48,7 +48,7 @@ function AlbumCard({
     return {
       key: s,
       label: t[s],
-      count: isLoading ? '…' : Array.isArray(r) ? r.length : '!',
+      count: isLoading ? null : Array.isArray(r) ? r.length : '!',
       err: !isLoading && !Array.isArray(r),
       loading: isLoading,
     };
@@ -159,7 +159,13 @@ function AlbumCard({
               >
                 <span className="src-dot"></span>
                 <span>{tb.label}</span>
-                <span className="badge-count">{tb.count}</span>
+                {tb.loading ? (
+                  <span className="badge-count badge-loading">
+                    <div className="spinner xs" />
+                  </span>
+                ) : (
+                  <span className="badge-count">{tb.count}</span>
+                )}
               </button>
             ))}
           </div>
