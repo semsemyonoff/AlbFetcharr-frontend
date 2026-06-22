@@ -22,31 +22,17 @@ function AlbumCard({
   const isSkipped = choice === 'skip';
   const chosenId = choice && choice !== 'skip' ? choice.candidateId : null;
 
-  const [tab, setTab] = React.useState(() => {
+  // null = auto (follows first source that gets results); non-null = user's explicit pick
+  const [tabChoice, setTabChoice] = React.useState(null);
+
+  const tab = React.useMemo(() => {
+    if (tabChoice !== null) return tabChoice;
     for (const s of sources) {
       const r = item.results[s];
       if (Array.isArray(r) && r.length > 0) return s;
     }
     return sources[0] ?? DEFAULT_SOURCES[0];
-  });
-
-  // True once the user explicitly clicks a tab — disables auto-switch after that.
-  const userChoseTab = React.useRef(false);
-
-  // Auto-switch to first source that gets results during parallel loading,
-  // but only until the user makes a manual selection.
-  React.useEffect(() => {
-    if (userChoseTab.current) return;
-    const currentR = item.results[tab];
-    if (!isSourceLoading(currentR)) return; // tab already resolved
-    for (const s of sources) {
-      const r = item.results[s];
-      if (Array.isArray(r) && r.length > 0) {
-        setTab(s);
-        return;
-      }
-    }
-  }, [item.results, tab, sources]);
+  }, [tabChoice, item.results, sources]);
 
   const tabs = sources.map((s) => {
     const r = item.results[s];
@@ -162,8 +148,7 @@ function AlbumCard({
                 className={`src-tab ${tab === tb.key ? 'on' : ''} ${tb.err ? 'err' : ''} ${tb.loading ? 'loading' : ''}`}
                 data-src={tb.key}
                 onClick={() => {
-                  userChoseTab.current = true;
-                  setTab(tb.key);
+                  setTabChoice(tb.key);
                 }}
               >
                 <span className="src-dot"></span>

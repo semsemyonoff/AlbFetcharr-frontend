@@ -362,9 +362,8 @@ export default function App() {
     };
 
     fetchConfig();
-    // eslint-disable-next-line react-hooks/set-state-in-effect
     reloadSettings();
-  }, []);
+  }, [reloadSettings]);
 
   React.useEffect(() => {
     if (mqlCleanupRef.current) {
@@ -415,12 +414,9 @@ export default function App() {
   const t = I18N[lang];
 
   React.useEffect(() => {
-    // Initial data load on mount. runFetch sets a synchronous loading state —
-    // that's the intended fetch trigger here, not a cascading re-render.
-    // eslint-disable-next-line react-hooks/set-state-in-effect
     runFetch();
     fetchSources();
-  }, []);
+  }, [runFetch, fetchSources]);
 
   // Step state
   const [step, setStep] = React.useState('select');
@@ -434,14 +430,8 @@ export default function App() {
     availableSources.forEach((source) => {
       initialSources[source.id] = true;
     });
-    // eslint-disable-next-line react-hooks/set-state-in-effect
     setSources(initialSources);
   }, [availableSources]);
-
-  const sourceIds = React.useMemo(
-    () => availableSources.map((s) => s.id),
-    [availableSources]
-  );
 
   // Step 2 & 3 state (stubs for now)
   const [searchItems, setSearchItems] = React.useState([]);
