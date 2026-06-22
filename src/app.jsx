@@ -445,6 +445,7 @@ export default function App() {
 
   // Step 2 & 3 state (stubs for now)
   const [searchItems, setSearchItems] = React.useState([]);
+  const [searchedSources, setSearchedSources] = React.useState([]);
   const [choices, setChoices] = React.useState({});
   const [downloads, setDownloads] = React.useState([]);
   const [logLines, setLogLines] = React.useState([]);
@@ -496,6 +497,7 @@ export default function App() {
     }));
     setSearchItems(initialItems);
     setChoices({});
+    setSearchedSources(enabledSourceIds);
 
     // Cancel any prior in-flight search so its callbacks don't corrupt new state.
     searchAbortRef.current?.abort();
@@ -976,7 +978,7 @@ export default function App() {
                 setChoice={setChoice}
                 onBack={() => setStep('select')}
                 onDownload={onDownload}
-                sources={sourceIds}
+                sources={searchedSources}
               />
             )}
 

@@ -30,8 +30,13 @@ function AlbumCard({
     return sources[0] ?? DEFAULT_SOURCES[0];
   });
 
-  // Auto-switch to first source that gets results during parallel loading
+  // True once the user explicitly clicks a tab — disables auto-switch after that.
+  const userChoseTab = React.useRef(false);
+
+  // Auto-switch to first source that gets results during parallel loading,
+  // but only until the user makes a manual selection.
   React.useEffect(() => {
+    if (userChoseTab.current) return;
     const currentR = item.results[tab];
     if (!isSourceLoading(currentR)) return; // tab already resolved
     for (const s of sources) {
@@ -156,7 +161,10 @@ function AlbumCard({
                 key={tb.key}
                 className={`src-tab ${tab === tb.key ? 'on' : ''} ${tb.err ? 'err' : ''} ${tb.loading ? 'loading' : ''}`}
                 data-src={tb.key}
-                onClick={() => setTab(tb.key)}
+                onClick={() => {
+                  userChoseTab.current = true;
+                  setTab(tb.key);
+                }}
               >
                 <span className="src-dot"></span>
                 <span>{tb.label}</span>
