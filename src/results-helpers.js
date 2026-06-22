@@ -1,5 +1,9 @@
 /* Simple Levenshtein distance-based scoring for candidate matching */
 
+export function isSourceLoading(r) {
+  return r != null && r.loading === true;
+}
+
 function levenshteinDistance(a, b) {
   a = a.toLowerCase();
   b = b.toLowerCase();
@@ -35,6 +39,28 @@ export function scoreCandidate(album, candidate) {
   const similarity = Math.max(0, 1 - dist / maxLen);
 
   return similarity;
+}
+
+export function buildSourceCandidates(srcResults, srcId, albumId, albumRef) {
+  return srcResults.map((r, idx) => {
+    const matchArtists = Array.isArray(r.match_artists)
+      ? r.match_artists
+      : (r.match_artists || '').split(', ').filter(Boolean);
+    const cand = {
+      id: `${albumId}-${srcId}-${idx}`,
+      source: srcId,
+      artist: matchArtists[0] || 'Unknown',
+      match_artists: matchArtists,
+      title: r.match_title,
+      match_title: r.match_title,
+      url: r.match_url,
+      match_url: r.match_url,
+      year: r.year,
+      track_count: r.track_count,
+      cover_url: r.cover_url,
+    };
+    return { ...cand, match: scoreCandidate(albumRef, cand) };
+  });
 }
 
 export function getBestCandidate(candidates) {

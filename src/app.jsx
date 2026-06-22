@@ -5,7 +5,7 @@ import SelectStep from './select-step.jsx';
 import { ResultsStep } from './results-step.jsx';
 import { DownloadStep } from './download-step.jsx';
 import {
-  scoreCandidate,
+  buildSourceCandidates,
   getBestCandidate,
   buildDownloadItems,
 } from './results-helpers.js';
@@ -210,6 +210,7 @@ export default function App() {
   const [theme, setTheme] = React.useState('system');
   const [accent, setAccent] = React.useState(DEFAULT_ACCENT);
   const mqlCleanupRef = React.useRef(null);
+  const searchAbortRef = React.useRef(null);
 
   // Settings state
   const [encryptionReady, setEncryptionReady] = React.useState(false);
@@ -437,6 +438,11 @@ export default function App() {
     setSources(initialSources);
   }, [availableSources]);
 
+  const sourceIds = React.useMemo(
+    () => availableSources.map((s) => s.id),
+    [availableSources]
+  );
+
   // Step 2 & 3 state (stubs for now)
   const [searchItems, setSearchItems] = React.useState([]);
   const [choices, setChoices] = React.useState({});
@@ -491,6 +497,12 @@ export default function App() {
     setSearchItems(initialItems);
     setChoices({});
 
+    // Cancel any prior in-flight search so its callbacks don't corrupt new state.
+    searchAbortRef.current?.abort();
+    const abortController = new AbortController();
+    searchAbortRef.current = abortController;
+    const { signal } = abortController;
+
     let firstResultReceived = false;
 
     const fetchForSource = async (srcId) => {
@@ -502,6 +514,7 @@ export default function App() {
             albums: albumPayloads,
             sources: [srcId],
           }),
+          signal,
         });
 
         if (!response.ok) throw new Error(`HTTP ${response.status}`);
@@ -519,34 +532,16 @@ export default function App() {
               (r) => r.source === srcId
             );
             const srcError = result.errors.find((e) => e.source === srcId);
+            const albumRef = { artist: result.artist, album: result.title };
 
             let sourceValue;
             if (srcResults.length > 0) {
-              sourceValue = srcResults.map((r, idx) => {
-                const matchArtists = Array.isArray(r.match_artists)
-                  ? r.match_artists
-                  : (r.match_artists || '').split(', ').filter(Boolean);
-                const cand = {
-                  id: `${result.album_id}-${srcId}-${idx}`,
-                  source: srcId,
-                  artist: matchArtists[0] || 'Unknown',
-                  match_artists: matchArtists,
-                  title: r.match_title,
-                  match_title: r.match_title,
-                  url: r.match_url,
-                  match_url: r.match_url,
-                  year: r.year,
-                  track_count: r.track_count,
-                  cover_url: r.cover_url,
-                };
-                return {
-                  ...cand,
-                  match: scoreCandidate(
-                    { artist: result.artist, album: result.title },
-                    cand
-                  ),
-                };
-              });
+              sourceValue = buildSourceCandidates(
+                srcResults,
+                srcId,
+                result.album_id,
+                albumRef
+              );
             } else if (srcError) {
               sourceValue = { message: srcError.message };
             } else {
@@ -574,27 +569,12 @@ export default function App() {
             );
             if (srcResults.length === 0) return;
 
-            const cands = srcResults.map((r, idx) => {
-              const matchArtists = Array.isArray(r.match_artists)
-                ? r.match_artists
-                : (r.match_artists || '').split(', ').filter(Boolean);
-              const cand = {
-                id: `${result.album_id}-${srcId}-${idx}`,
-                source: srcId,
-                match_artists: matchArtists,
-                match_title: r.match_title,
-                year: r.year,
-                track_count: r.track_count,
-              };
-              return {
-                ...cand,
-                match: scoreCandidate(
-                  { artist: result.artist, album: result.title },
-                  cand
-                ),
-              };
-            });
-
+            const cands = buildSourceCandidates(
+              srcResults,
+              srcId,
+              result.album_id,
+              { artist: result.artist, album: result.title }
+            );
             const best = getBestCandidate(cands);
             if (best && best.match >= 0.5) {
               next[albumId] = {
@@ -612,6 +592,7 @@ export default function App() {
           setStep('results');
         }
       } catch (err) {
+        if (err.name === 'AbortError') return;
         console.error(`Search failed for source ${srcId}:`, err);
         setSearchItems((prev) =>
           prev.map((item) => ({
@@ -642,7 +623,8 @@ export default function App() {
           text: tstamp('Search failed: all sources returned errors'),
         },
       ]);
-      setStep('select');
+      // Stay on results so per-source error messages are visible.
+      setStep('results');
     } else {
       pushLog([
         {
@@ -994,7 +976,7 @@ export default function App() {
                 setChoice={setChoice}
                 onBack={() => setStep('select')}
                 onDownload={onDownload}
-                sources={availableSources.map((s) => s.id)}
+                sources={sourceIds}
               />
             )}
 

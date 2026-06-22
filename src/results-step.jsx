@@ -3,6 +3,7 @@ import { Icon } from './icons';
 import { I18N_FNS } from './i18n.js';
 import { Cover } from './cover.jsx';
 import { formatDuration, albumTypeLabel } from './wanted-helpers.js';
+import { isSourceLoading } from './results-helpers.js';
 
 const DEFAULT_SOURCES = ['yandex', 'youtube_music', 'soundcloud'];
 
@@ -32,7 +33,7 @@ function AlbumCard({
   // Auto-switch to first source that gets results during parallel loading
   React.useEffect(() => {
     const currentR = item.results[tab];
-    if (currentR != null && currentR.loading !== true) return; // tab already resolved
+    if (!isSourceLoading(currentR)) return; // tab already resolved
     for (const s of sources) {
       const r = item.results[s];
       if (Array.isArray(r) && r.length > 0) {
@@ -44,18 +45,18 @@ function AlbumCard({
 
   const tabs = sources.map((s) => {
     const r = item.results[s];
-    const isLoading = r != null && r.loading === true;
+    const loading = isSourceLoading(r);
     return {
       key: s,
       label: t[s],
-      count: isLoading ? null : Array.isArray(r) ? r.length : '!',
-      err: !isLoading && !Array.isArray(r),
-      loading: isLoading,
+      count: loading ? null : Array.isArray(r) ? r.length : '!',
+      err: !loading && !Array.isArray(r),
+      loading,
     };
   });
 
   const currentResult = item.results[tab];
-  const isLoading = currentResult != null && currentResult.loading === true;
+  const isLoading = isSourceLoading(currentResult);
   const isErr = !isLoading && !Array.isArray(currentResult);
   const candidates = isErr || isLoading ? [] : currentResult;
 
@@ -81,7 +82,7 @@ function AlbumCard({
       (s) => Array.isArray(item.results[s]) && item.results[s].length > 0
     );
     const allResolved = sources.every(
-      (s) => item.results[s] != null && item.results[s].loading !== true
+      (s) => !isSourceLoading(item.results[s])
     );
     if (!hasAny && allResolved) {
       pillNode = <span className="chosen-pill err">{t.no_matches}</span>;
@@ -290,7 +291,7 @@ export const ResultsStep = ({
     let e = 0;
     for (const s of sources) {
       const r = it.results[s];
-      if (r != null && r.loading !== true && !Array.isArray(r)) e++;
+      if (!isSourceLoading(r) && !Array.isArray(r)) e++;
     }
     return acc + e;
   }, 0);
