@@ -151,4 +151,10 @@ const ICONS = {
       <path d="m1 1 22 22" />
     </>
   ),
+  monitor: (
+    <>
+      <rect x="2" y="3" width="20" height="14" rx="2" />
+      <path d="M8 21h8M12 17v4" />
+    </>
+  ),
 };

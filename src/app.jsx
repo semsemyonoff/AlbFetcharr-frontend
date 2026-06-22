@@ -144,11 +144,11 @@ const Header = ({
       >
         <Icon
           name={
-            theme === 'dark' ||
-            (theme === 'system' &&
-              window.matchMedia('(prefers-color-scheme: dark)').matches)
-              ? 'sun'
-              : 'moon'
+            theme === 'system'
+              ? 'monitor'
+              : theme === 'dark'
+                ? 'sun'
+                : 'moon'
           }
           size={18}
         />
@@ -455,83 +455,136 @@ export default function App() {
     const selectedAlbums = albums.filter((a) => selected.has(a.id));
     if (selectedAlbums.length === 0) return;
 
+    const enabledSourceIds = Object.entries(sources)
+      .filter(([, v]) => v)
+      .map(([k]) => k);
+
+    if (enabledSourceIds.length === 0) return;
+
     setStep('searching');
     pushLog([
       {
         type: 'dim',
         text: tstamp(
-          `Searching ${selectedAlbums.length} album(s) in ${Object.entries(
-            sources
-          )
-            .filter(([, v]) => v)
-            .map(([k]) => availableSources.find((s) => s.id === k)?.name || k)
+          `Searching ${selectedAlbums.length} album(s) in ${enabledSourceIds
+            .map((k) => availableSources.find((s) => s.id === k)?.name || k)
             .join(', ')}…`
         ),
       },
     ]);
 
-    try {
-      const payload = {
-        albums: selectedAlbums.map((a) => ({
-          artist: a.artist,
-          title: a.album,
-          album_id: parseInt(a.id, 10),
-          root_folder: a.root_folder,
-        })),
-        sources: Object.entries(sources)
-          .filter(([, v]) => v)
-          .map(([k]) => k),
-      };
+    const albumPayloads = selectedAlbums.map((a) => ({
+      artist: a.artist,
+      title: a.album,
+      album_id: parseInt(a.id, 10),
+      root_folder: a.root_folder,
+    }));
 
-      const response = await fetch('/api/search', {
-        method: 'POST',
-        headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify(payload),
-      });
+    // Initialize all sources in loading state
+    const initialItems = selectedAlbums.map((album) => ({
+      album,
+      results: Object.fromEntries(
+        enabledSourceIds.map((s) => [s, { loading: true }])
+      ),
+      errors: [],
+    }));
+    setSearchItems(initialItems);
+    setChoices({});
 
-      if (!response.ok) {
-        throw new Error(`HTTP ${response.status}`);
-      }
+    let firstResultReceived = false;
 
-      const results = await response.json();
+    const fetchForSource = async (srcId) => {
+      try {
+        const response = await fetch('/api/search', {
+          method: 'POST',
+          headers: { 'Content-Type': 'application/json' },
+          body: JSON.stringify({
+            albums: albumPayloads,
+            sources: [srcId],
+          }),
+        });
 
-      const items = results.map((result) => {
-        const album = selectedAlbums.find(
-          (a) => a.id === String(result.album_id)
-        );
-        const albumObj = album || {
-          artist: result.artist,
-          album: result.title,
-          year: 0,
-          tracks: 0,
-          id: String(result.album_id),
-        };
+        if (!response.ok) throw new Error(`HTTP ${response.status}`);
 
-        const grouped = {};
-        const SOURCES = availableSources.map((s) => s.id);
+        const results = await response.json();
 
-        SOURCES.forEach((src) => {
-          const srcResults = result.results.filter((r) => r.source === src);
-          if (srcResults.length === 0) {
-            const error = result.errors.find((e) => e.source === src);
-            grouped[src] = error ? { message: error.message } : [];
-          } else {
-            grouped[src] = srcResults.map((r, idx) => {
+        setSearchItems((prev) => {
+          const updated = prev.map((item) => {
+            const result = results.find(
+              (r) => String(r.album_id) === item.album.id
+            );
+            if (!result) return item;
+
+            const srcResults = result.results.filter(
+              (r) => r.source === srcId
+            );
+            const srcError = result.errors.find((e) => e.source === srcId);
+
+            let sourceValue;
+            if (srcResults.length > 0) {
+              sourceValue = srcResults.map((r, idx) => {
+                const matchArtists = Array.isArray(r.match_artists)
+                  ? r.match_artists
+                  : (r.match_artists || '').split(', ').filter(Boolean);
+                const cand = {
+                  id: `${result.album_id}-${srcId}-${idx}`,
+                  source: srcId,
+                  artist: matchArtists[0] || 'Unknown',
+                  match_artists: matchArtists,
+                  title: r.match_title,
+                  match_title: r.match_title,
+                  url: r.match_url,
+                  match_url: r.match_url,
+                  year: r.year,
+                  track_count: r.track_count,
+                  cover_url: r.cover_url,
+                };
+                return {
+                  ...cand,
+                  match: scoreCandidate(
+                    { artist: result.artist, album: result.title },
+                    cand
+                  ),
+                };
+              });
+            } else if (srcError) {
+              sourceValue = { message: srcError.message };
+            } else {
+              sourceValue = [];
+            }
+
+            return {
+              ...item,
+              results: { ...item.results, [srcId]: sourceValue },
+            };
+          });
+          return updated;
+        });
+
+        // Auto-select best candidates as each source arrives.
+        // Only set a choice if the album doesn't already have one.
+        setChoices((prev) => {
+          const next = { ...prev };
+          results.forEach((result) => {
+            const albumId = String(result.album_id);
+            if (next[albumId]) return; // already chosen
+
+            const srcResults = result.results.filter(
+              (r) => r.source === srcId
+            );
+            if (srcResults.length === 0) return;
+
+            const cands = srcResults.map((r, idx) => {
               const matchArtists = Array.isArray(r.match_artists)
                 ? r.match_artists
                 : (r.match_artists || '').split(', ').filter(Boolean);
               const cand = {
-                id: `${result.album_id}-${src}-${idx}`,
-                source: src,
-                artist: matchArtists[0] || 'Unknown',
+                id: `${result.album_id}-${srcId}-${idx}`,
+                source: srcId,
                 match_artists: matchArtists,
-                title: r.match_title,
                 match_title: r.match_title,
-                url: r.match_url,
-                match_url: r.match_url,
                 year: r.year,
                 track_count: r.track_count,
-                cover_url: r.cover_url,
               };
               return {
                 ...cand,
@@ -541,49 +594,62 @@ export default function App() {
                 ),
               };
             });
-          }
+
+            const best = getBestCandidate(cands);
+            if (best && best.match >= 0.5) {
+              next[albumId] = {
+                candidateId: best.id,
+                format: null,
+                source: best.source,
+              };
+            }
+          });
+          return next;
         });
 
-        return {
-          album: albumObj,
-          results: grouped,
-          errors: [],
-        };
-      });
-
-      const SOURCES = availableSources.map((s) => s.id);
-      const initialChoices = {};
-      items.forEach((item) => {
-        const allCands = SOURCES.flatMap((s) =>
-          Array.isArray(item.results[s]) ? item.results[s] : []
-        );
-        const best = getBestCandidate(allCands);
-        if (best && best.match >= 0.5) {
-          initialChoices[item.album.id] = {
-            candidateId: best.id,
-            format: null, // never seed; backend uses override/global default
-            source: best.source,
-          };
+        if (!firstResultReceived) {
+          firstResultReceived = true;
+          setStep('results');
         }
-      });
-      setChoices(initialChoices);
-      setSearchItems(items);
-      setStep('results');
+      } catch (err) {
+        console.error(`Search failed for source ${srcId}:`, err);
+        setSearchItems((prev) =>
+          prev.map((item) => ({
+            ...item,
+            results: {
+              ...item.results,
+              [srcId]: { message: err.message },
+            },
+          }))
+        );
+        pushLog([
+          {
+            type: 'error',
+            text: tstamp(`Search failed (${srcId}): ${err.message}`),
+          },
+        ]);
+      }
+    };
+
+    await Promise.allSettled(
+      enabledSourceIds.map((srcId) => fetchForSource(srcId))
+    );
+
+    if (!firstResultReceived) {
+      pushLog([
+        {
+          type: 'error',
+          text: tstamp('Search failed: all sources returned errors'),
+        },
+      ]);
+      setStep('select');
+    } else {
       pushLog([
         {
           type: 'info',
           text: tstamp(`Search complete. ${selectedAlbums.length} album(s).`),
         },
       ]);
-    } catch (err) {
-      console.error('Search failed:', err);
-      pushLog([
-        {
-          type: 'error',
-          text: tstamp(`Search failed: ${err.message}`),
-        },
-      ]);
-      setStep('select');
     }
   }, [albums, selected, sources, availableSources]);
 
@@ -832,13 +898,6 @@ export default function App() {
     runFetch();
   };
 
-  // Resolved yandex quality: run override → committed setting → hardcoded default.
-  // Passed to ResultsStep for display-only; never seeded into choice.format.
-  const resolvedYandexQuality =
-    runOverrides.yandex_quality ??
-    committedSettings.yandex_quality?.value ??
-    '2';
-
   return (
     <>
       <div className="app-v2">
@@ -936,7 +995,6 @@ export default function App() {
                 onBack={() => setStep('select')}
                 onDownload={onDownload}
                 sources={availableSources.map((s) => s.id)}
-                resolvedYandexQuality={resolvedYandexQuality}
               />
             )}
 

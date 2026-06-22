@@ -1208,6 +1208,13 @@ html[data-theme='light'] .pg-btn.on {
   background: var(--danger-bg);
   color: var(--danger);
 }
+.src-tab.loading {
+  opacity: 0.6;
+}
+.src-tab.loading .badge-count {
+  background: var(--surface-2);
+  color: var(--text-mute);
+}
 
 /* Radio-style candidate */
 .cand-radio {

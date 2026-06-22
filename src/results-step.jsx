@@ -6,29 +6,6 @@ import { formatDuration, albumTypeLabel } from './wanted-helpers.js';
 
 const DEFAULT_SOURCES = ['yandex', 'youtube_music', 'soundcloud'];
 
-function getFormatLabel(t, source, format) {
-  if (source === 'yandex') {
-    const formatMap = {
-      0: t.format_lossy_low,
-      1: t.format_lossy_high,
-      2: t.format_flac,
-    };
-    return formatMap[format] || format;
-  }
-  return t.format_default_ytdlp;
-}
-
-function getFormatOptions(t, source) {
-  if (source === 'yandex') {
-    return [
-      { value: '0', label: t.format_lossy_low },
-      { value: '1', label: t.format_lossy_high },
-      { value: '2', label: t.format_flac },
-    ];
-  }
-  return [{ value: null, label: t.format_default_ytdlp }];
-}
-
 function AlbumCard({
   item,
   choices,
@@ -38,7 +15,6 @@ function AlbumCard({
   setSkip,
   setActive,
   sources,
-  resolvedYandexQuality,
 }) {
   const a = item.album;
   const choice = choices[a.id];
@@ -53,19 +29,35 @@ function AlbumCard({
     return sources[0] ?? DEFAULT_SOURCES[0];
   });
 
+  // Auto-switch to first source that gets results during parallel loading
+  React.useEffect(() => {
+    const currentR = item.results[tab];
+    if (currentR != null && currentR.loading !== true) return; // tab already resolved
+    for (const s of sources) {
+      const r = item.results[s];
+      if (Array.isArray(r) && r.length > 0) {
+        setTab(s);
+        return;
+      }
+    }
+  }, [item.results, tab, sources]);
+
   const tabs = sources.map((s) => {
     const r = item.results[s];
+    const isLoading = r != null && r.loading === true;
     return {
       key: s,
       label: t[s],
-      count: Array.isArray(r) ? r.length : '!',
-      err: !Array.isArray(r),
+      count: isLoading ? '…' : Array.isArray(r) ? r.length : '!',
+      err: !isLoading && !Array.isArray(r),
+      loading: isLoading,
     };
   });
 
   const currentResult = item.results[tab];
-  const isErr = !Array.isArray(currentResult);
-  const candidates = isErr ? [] : currentResult;
+  const isLoading = currentResult != null && currentResult.loading === true;
+  const isErr = !isLoading && !Array.isArray(currentResult);
+  const candidates = isErr || isLoading ? [] : currentResult;
 
   let pillNode;
   if (isSkipped) {
@@ -88,8 +80,13 @@ function AlbumCard({
     const hasAny = sources.some(
       (s) => Array.isArray(item.results[s]) && item.results[s].length > 0
     );
-    if (!hasAny) {
+    const allResolved = sources.every(
+      (s) => item.results[s] != null && item.results[s].loading !== true
+    );
+    if (!hasAny && allResolved) {
       pillNode = <span className="chosen-pill err">{t.no_matches}</span>;
+    } else if (!hasAny) {
+      pillNode = null;
     } else {
       pillNode = (
         <span
@@ -156,7 +153,7 @@ function AlbumCard({
             {tabs.map((tb) => (
               <button
                 key={tb.key}
-                className={`src-tab ${tab === tb.key ? 'on' : ''} ${tb.err ? 'err' : ''}`}
+                className={`src-tab ${tab === tb.key ? 'on' : ''} ${tb.err ? 'err' : ''} ${tb.loading ? 'loading' : ''}`}
                 data-src={tb.key}
                 onClick={() => setTab(tb.key)}
               >
@@ -167,7 +164,17 @@ function AlbumCard({
             ))}
           </div>
 
-          {isErr && (
+          {isLoading && (
+            <div
+              className="candidate-empty"
+              style={{ display: 'flex', alignItems: 'center', gap: 8 }}
+            >
+              <div className="spinner" />
+              {t.searching_title}
+            </div>
+          )}
+
+          {!isLoading && isErr && (
             <div className="candidate-err">
               <Icon name="alert" size={16} />
               <span>
@@ -176,24 +183,15 @@ function AlbumCard({
             </div>
           )}
 
-          {!isErr && candidates.length === 0 && (
+          {!isLoading && !isErr && candidates.length === 0 && (
             <div className="candidate-empty">{t.no_candidates}</div>
           )}
 
-          {!isErr &&
+          {!isLoading &&
+            !isErr &&
             candidates.map((c) => {
               const isChosen = chosenId === c.id;
               const matchPct = Math.round(c.match * 100);
-              // Display the resolved yandex_quality (from setting/override) when
-              // no explicit per-album pick; never seed choice.format on selection.
-              const fmt =
-                isChosen && choice.format != null
-                  ? choice.format
-                  : c.source === 'yandex'
-                    ? resolvedYandexQuality
-                    : null;
-              const formatOptions = getFormatOptions(t, c.source);
-              const showFormatSelect = formatOptions.length > 1;
 
               const artistStr = (c.match_artists || []).join(', ');
               const metaParts = [
@@ -240,33 +238,6 @@ function AlbumCard({
                   <div className={`match ${matchPct < 70 ? 'low' : ''}`}>
                     {matchPct}%
                   </div>
-                  {showFormatSelect ? (
-                    <select
-                      className="fmt-select"
-                      value={fmt || ''}
-                      onClick={(e) => e.stopPropagation()}
-                      onChange={(e) => {
-                        e.stopPropagation();
-                        setChosen(a.id, c, e.target.value || null);
-                      }}
-                    >
-                      {formatOptions.map((f) => (
-                        <option
-                          key={f.value || 'default'}
-                          value={f.value || ''}
-                        >
-                          {f.label}
-                        </option>
-                      ))}
-                    </select>
-                  ) : (
-                    <div
-                      className="fmt-select"
-                      style={{ padding: '6px 8px', fontSize: '12px' }}
-                    >
-                      {getFormatLabel(t, c.source, fmt)}
-                    </div>
-                  )}
                 </label>
               );
             })}
@@ -285,7 +256,6 @@ export const ResultsStep = ({
   onBack,
   onDownload,
   sources = DEFAULT_SOURCES,
-  resolvedYandexQuality = '2',
 }) => {
   const setChosen = (albumId, candidate, format) => {
     setChoice(albumId, {
@@ -313,7 +283,8 @@ export const ResultsStep = ({
   const errorsCount = items.reduce((acc, it) => {
     let e = 0;
     for (const s of sources) {
-      if (!Array.isArray(it.results[s])) e++;
+      const r = it.results[s];
+      if (r != null && r.loading !== true && !Array.isArray(r)) e++;
     }
     return acc + e;
   }, 0);
@@ -345,7 +316,6 @@ export const ResultsStep = ({
             setSkip={setSkip}
             setActive={setActive}
             sources={sources}
-            resolvedYandexQuality={resolvedYandexQuality}
           />
         ))}
       </div>
