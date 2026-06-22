@@ -620,7 +620,23 @@ export function SettingsScreen({
                 </div>
                 {soundcloudOn && (
                   <div className="source-card-body">
-                    <div className="field-hint">{t.sc_cookies_note}</div>
+                    <Field
+                      label={t.sc_include_playlists}
+                      hint={t.sc_include_playlists_hint}
+                      source={effSrc('soundcloud_include_playlists')}
+                      t={t}
+                      canReset={canReset('soundcloud_include_playlists')}
+                      onReset={() => resetField('soundcloud_include_playlists')}
+                    >
+                      <Toggle
+                        value={strToBool(
+                          effVal('soundcloud_include_playlists')
+                        )}
+                        onChange={(v) =>
+                          setField('soundcloud_include_playlists', boolToStr(v))
+                        }
+                      />
+                    </Field>
                   </div>
                 )}
               </div>

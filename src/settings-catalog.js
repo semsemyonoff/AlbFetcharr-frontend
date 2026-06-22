@@ -122,6 +122,15 @@ export const SETTINGS_FIELDS = [
     group: 'sources',
     sourceCard: 'soundcloud',
   },
+  {
+    key: 'soundcloud_include_playlists',
+    control: 'toggle',
+    labelKey: 'sc_include_playlists',
+    hintKey: 'sc_include_playlists_hint',
+    section: 'sources',
+    group: 'sources',
+    sourceCard: 'soundcloud',
+  },
 
   // ── Lidarr ────────────────────────────────────────────────────────────────
   {

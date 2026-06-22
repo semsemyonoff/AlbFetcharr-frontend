@@ -159,8 +159,9 @@ export const I18N = {
       'Without OAuth, search works anonymously but YouTube may return empty results.',
     sc_only:
       'No credentials required. SoundCloud searches and downloads anonymously.',
-    sc_cookies_note:
-      'An optional shared cookies.txt path lives under Advanced — it applies to YouTube and SoundCloud downloads.',
+    sc_include_playlists: 'Include playlists in search',
+    sc_include_playlists_hint:
+      'Off: only releases tagged as albums. On: also search user playlists — catches releases not marked as albums, but may surface fan compilations and mixtapes.',
     lidarr_url: 'URL',
     lidarr_apikey: 'API key',
     lidarr_import: 'Import path',
@@ -388,8 +389,9 @@ export const I18N = {
     yt_oauth_help:
       'Без OAuth поиск работает анонимно, но YouTube может возвращать пустые результаты.',
     sc_only: 'Учётные данные не требуются. SoundCloud ищет и качает анонимно.',
-    sc_cookies_note:
-      'Необязательный общий путь к cookies.txt находится в разделе «Дополнительно» — он применяется к загрузкам YouTube и SoundCloud.',
+    sc_include_playlists: 'Включать плейлисты в поиск',
+    sc_include_playlists_hint:
+      'Выкл: только релизы с тегом «альбом». Вкл: искать и в пользовательских плейлистах — ловит релизы без тега альбома, но может подмешивать фан-сборники и миксы.',
     lidarr_url: 'URL',
     lidarr_apikey: 'API-ключ',
     lidarr_import: 'Путь импорта',

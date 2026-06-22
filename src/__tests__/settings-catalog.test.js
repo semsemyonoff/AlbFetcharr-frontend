@@ -33,6 +33,7 @@ const BACKEND_REGISTRY_KEYS = new Set([
   'enable_yandex',
   'enable_youtube_music',
   'enable_soundcloud',
+  'soundcloud_include_playlists',
   'yandex_delay',
   'yandex_compat_level',
   'yandex_unsafe_path',

@@ -96,7 +96,6 @@ describe('i18n', () => {
       'yt_client_secret',
       'yt_oauth_help',
       'sc_only',
-      'sc_cookies_note',
       'lidarr_url',
       'lidarr_apikey',
       'lidarr_import',
