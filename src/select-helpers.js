@@ -20,9 +20,13 @@ export function sortAlbums(albums, key, direction = 'asc') {
         av = a.year;
         bv = b.year;
         break;
-      case 'added':
-        av = -a.addedDaysAgo;
-        bv = -b.addedDaysAgo;
+      case 'library':
+        av = a.library;
+        bv = b.library;
+        break;
+      case 'tracks':
+        av = a.tracks;
+        bv = b.tracks;
         break;
       default:
         av = 0;
@@ -47,7 +51,8 @@ export function filterAlbums(albums, query) {
     (album) =>
       album.artist.toLowerCase().includes(q) ||
       album.album.toLowerCase().includes(q) ||
-      String(album.year).includes(q)
+      (album.year != null ? String(album.year) : '').includes(q) ||
+      (album.library || '').toLowerCase().includes(q)
   );
 }
 

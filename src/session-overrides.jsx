@@ -19,7 +19,9 @@ import {
   boolToStr,
   coverResToUi,
   uiToCoverRes,
-  isLosslessYtdlp,
+  isPassthroughYtdlp,
+  qualityPresetsFor,
+  snapQuality,
   typeError,
 } from './settings-helpers';
 import {
@@ -46,6 +48,10 @@ export function ThisRunPanel({ t, committed, overrides, setOverrides }) {
     setOverrides((o) => {
       const n = { ...o };
       delete n[key];
+      // Resetting the format reverts it to the global default; a quality
+      // override may not be a valid preset for that format, so drop it too and
+      // fall back to the (consistent) global default pair.
+      if (key === 'ytdlp_format') delete n.ytdlp_quality;
       return n;
     });
 
@@ -54,7 +60,6 @@ export function ThisRunPanel({ t, committed, overrides, setOverrides }) {
   ).length;
 
   const effectiveFormat = runVal('ytdlp_format');
-  const qualityDisabled = isLosslessYtdlp(effectiveFormat);
 
   // Plain render helpers — not React components — to avoid remounting on
   // re-render, which would make fireEvent DOM references stale.
@@ -71,11 +76,11 @@ export function ThisRunPanel({ t, committed, overrides, setOverrides }) {
     const unitLabel = unit ? t[unit] : undefined;
     const ov = isOverridden(key);
 
-    // Minimal type-derived validation (same rules as the global screen).
-    // A disabled quality field (lossless format) is never flagged.
-    const numericDisabled = key === 'ytdlp_quality' && qualityDisabled;
+    // For ytdlp_quality: hidden when format is passthrough ('best').
+    const qualityHidden =
+      key === 'ytdlp_quality' && isPassthroughYtdlp(effectiveFormat);
     const errCode =
-      committed[key] && !numericDisabled
+      committed[key] && !qualityHidden
         ? typeError(committed[key].type, runVal(key), {
             min: field.min,
             max: field.max,
@@ -124,22 +129,47 @@ export function ThisRunPanel({ t, committed, overrides, setOverrides }) {
       }
 
       if (control === 'select') {
+        const handleChange =
+          key === 'ytdlp_format'
+            ? (v) => {
+                setRun(key, v);
+                const snapped = snapQuality(v, runVal('ytdlp_quality'));
+                if (snapped !== null) setRun('ytdlp_quality', snapped);
+              }
+            : (v) => setRun(key, v);
         return (
           <Select
             value={runVal(key) ?? ''}
             options={choices}
-            onChange={(v) => setRun(key, v)}
+            onChange={handleChange}
             t={t}
           />
         );
       }
 
       if (control === 'number') {
+        if (qualityHidden) return null;
+        if (key === 'ytdlp_quality') {
+          const presets = qualityPresetsFor(effectiveFormat);
+          if (presets) {
+            const options = presets.options.map((kbps) => ({
+              value: String(kbps),
+              label: String(kbps),
+            }));
+            return (
+              <Select
+                value={runVal(key) ?? ''}
+                options={options}
+                onChange={(v) => setRun(key, v)}
+                t={t}
+              />
+            );
+          }
+        }
         return (
           <NumberUnit
             value={runVal(key) ?? ''}
             unit={unitLabel}
-            disabled={numericDisabled}
             error={!!errCode}
             onChange={(v) => setRun(key, v === '' ? '' : String(v))}
           />

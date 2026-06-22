@@ -138,9 +138,39 @@ export function uiToCoverRes({ number, original }) {
   return String(number);
 }
 
-/** Returns true when a yt-dlp format string is lossless (disables quality input). */
-export function isLosslessYtdlp(fmt) {
-  return fmt === 'flac' || fmt === 'wav';
+/** Returns true when a yt-dlp format is passthrough (no re-encode → quality field hidden). */
+export function isPassthroughYtdlp(fmt) {
+  return fmt === 'best';
+}
+
+// ── Quality presets ───────────────────────────────────────────────────────────
+
+export const YTDLP_QUALITY_PRESETS = {
+  opus: { options: [192, 160, 128, 96], default: 160 },
+  m4a: { options: [256, 192, 128], default: 256 },
+  mp3: { options: [320, 256, 192, 128], default: 256 },
+};
+
+/**
+ * Returns the preset options and default for the given yt-dlp format,
+ * or null for passthrough formats (where quality is hidden).
+ */
+export function qualityPresetsFor(format) {
+  return YTDLP_QUALITY_PRESETS[format] ?? null;
+}
+
+/**
+ * Snap a quality kbps string to the nearest preset for a given format.
+ * If the current value is already in the preset list, it's preserved.
+ * Returns the default for the format when the value isn't in the preset list.
+ * Returns null for passthrough formats.
+ */
+export function snapQuality(format, current) {
+  const presets = qualityPresetsFor(format);
+  if (!presets) return null;
+  const currentNum = Number(current);
+  if (presets.options.includes(currentNum)) return String(currentNum);
+  return String(presets.default);
 }
 
 /**

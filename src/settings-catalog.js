@@ -14,6 +14,7 @@ export const SETTINGS_SECTIONS = [
   { id: 'lidarr', labelKey: 'nav_lidarr' },
   { id: 'download', labelKey: 'nav_download' },
   { id: 'advanced', labelKey: 'nav_advanced' },
+  { id: 'environment', labelKey: 'nav_environment' },
 ];
 
 // ── Yandex quality choices ──────────────────────────────────────────────────
@@ -35,13 +36,10 @@ export const LYRICS_CHOICES = [
 // ── yt-dlp format choices ───────────────────────────────────────────────────
 
 export const YTDLP_FORMAT_CHOICES = [
-  { value: 'flac', label: 'FLAC' },
-  { value: 'mp3', label: 'MP3' },
-  { value: 'm4a', label: 'M4A' },
+  { value: 'best', labelKey: 'ytdlp_fmt_best' },
   { value: 'opus', label: 'OPUS' },
-  { value: 'vorbis', label: 'VORBIS' },
-  { value: 'aac', label: 'AAC' },
-  { value: 'wav', label: 'WAV' },
+  { value: 'm4a', label: 'M4A' },
+  { value: 'mp3', label: 'MP3' },
 ];
 
 // ── Compat level choices ────────────────────────────────────────────────────
@@ -99,15 +97,6 @@ export const SETTINGS_FIELDS = [
     sourceCard: 'youtube',
   },
   {
-    key: 'ytmusic_oauth_file',
-    control: 'text',
-    labelKey: 'yt_oauth_path',
-    hintKey: 'yt_oauth_help',
-    section: 'sources',
-    group: 'sources',
-    sourceCard: 'youtube',
-  },
-  {
     key: 'ytmusic_client_id',
     control: 'text',
     labelKey: 'yt_client_id',
@@ -146,21 +135,6 @@ export const SETTINGS_FIELDS = [
     key: 'lidarr_api_key',
     control: 'secret',
     labelKey: 'lidarr_apikey',
-    section: 'lidarr',
-    group: 'lidarr',
-  },
-  {
-    key: 'lidarr_import_path',
-    control: 'text',
-    labelKey: 'lidarr_import',
-    section: 'lidarr',
-    group: 'lidarr',
-  },
-  {
-    key: 'library_map',
-    control: 'text',
-    labelKey: 'lidarr_map',
-    hintKey: 'lidarr_map_help',
     section: 'lidarr',
     group: 'lidarr',
   },
@@ -206,23 +180,10 @@ export const SETTINGS_FIELDS = [
     group: 'dl-yandex',
   },
   {
-    key: 'yandex_only_music',
-    control: 'toggle',
-    labelKey: 'dl_only_music',
-    section: 'download',
-    group: 'dl-yandex',
-  },
-  {
-    key: 'yandex_stick_to_artist',
-    control: 'toggle',
-    labelKey: 'dl_stick_artist',
-    section: 'download',
-    group: 'dl-yandex',
-  },
-  {
     key: 'yandex_clear_comments',
     control: 'toggle',
     labelKey: 'dl_clear_comments',
+    hintKey: 'dl_clear_comments_hint',
     section: 'download',
     group: 'dl-yandex',
   },
@@ -247,14 +208,7 @@ export const SETTINGS_FIELDS = [
     group: 'dl-ytdlp',
   },
 
-  // ── Advanced — Yandex path + low-level ───────────────────────────────────
-  {
-    key: 'yandex_path_pattern',
-    control: 'text',
-    labelKey: 'adv_yandex_path_pattern',
-    section: 'advanced',
-    group: 'adv-yandex',
-  },
+  // ── Advanced — Yandex low-level ──────────────────────────────────────────
   {
     key: 'yandex_delay',
     control: 'number',
@@ -269,6 +223,7 @@ export const SETTINGS_FIELDS = [
     key: 'yandex_compat_level',
     control: 'segmented',
     labelKey: 'adv_compat',
+    hintKey: 'adv_compat_hint',
     choices: COMPAT_LEVEL_CHOICES,
     section: 'advanced',
     group: 'adv-yandex',
@@ -284,28 +239,11 @@ export const SETTINGS_FIELDS = [
 
   // ── Advanced — yt-dlp ────────────────────────────────────────────────────
   {
-    key: 'ytdlp_path_pattern',
-    control: 'text',
-    labelKey: 'adv_ytdlp_path_pattern',
-    section: 'advanced',
-    group: 'adv-ytdlp',
-  },
-  {
     key: 'ytdlp_retries',
     control: 'number',
     labelKey: 'adv_ytdlp_retries',
     min: 1,
     max: 100,
-    section: 'advanced',
-    group: 'adv-ytdlp',
-  },
-
-  // ── Advanced — yt-dlp / shared cookies ───────────────────────────────────
-  {
-    key: 'ytdlp_cookies_file',
-    control: 'text',
-    labelKey: 'adv_cookies',
-    hintKey: 'adv_cookies_note',
     section: 'advanced',
     group: 'adv-ytdlp',
   },
@@ -351,6 +289,36 @@ export const SETTINGS_FIELDS = [
     section: 'advanced',
     group: 'adv-app',
   },
+
+  // ── Environment — container-setup keys (read-only, informational) ─────────
+  {
+    key: 'ytmusic_oauth_file',
+    control: 'readonly',
+    labelKey: 'yt_oauth_path',
+    section: 'environment',
+    group: 'environment',
+  },
+  {
+    key: 'ytdlp_cookies_file',
+    control: 'readonly',
+    labelKey: 'adv_cookies',
+    section: 'environment',
+    group: 'environment',
+  },
+  {
+    key: 'lidarr_import_path',
+    control: 'readonly',
+    labelKey: 'lidarr_import',
+    section: 'environment',
+    group: 'environment',
+  },
+  {
+    key: 'library_map',
+    control: 'readonly',
+    labelKey: 'lidarr_map',
+    section: 'environment',
+    group: 'environment',
+  },
 ];
 
 // ── Session fields — all Tier-3 (scope=session) keys for "This run" panel ───
@@ -391,18 +359,6 @@ export const SESSION_FIELDS = [
     key: 'yandex_skip_existing',
     control: 'toggle',
     labelKey: 'dl_skip',
-    group: 'session-yandex',
-  },
-  {
-    key: 'yandex_only_music',
-    control: 'toggle',
-    labelKey: 'dl_only_music',
-    group: 'session-yandex',
-  },
-  {
-    key: 'yandex_stick_to_artist',
-    control: 'toggle',
-    labelKey: 'dl_stick_artist',
     group: 'session-yandex',
   },
   {
@@ -460,4 +416,5 @@ export const KNOWN_CONTROLS = [
   'number',
   'coverResolution',
   'secret',
+  'readonly',
 ];

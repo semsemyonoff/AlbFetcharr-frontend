@@ -110,7 +110,7 @@ function makeCommitted(overrides = {}) {
     }),
     ytdlp_format: makeItem('ytdlp_format', {
       type: 'enum',
-      value: 'flac',
+      value: 'opus',
       source: 'default',
     }),
     ytdlp_quality: makeItem('ytdlp_quality', {
@@ -270,10 +270,13 @@ describe('SettingsScreen — save puts', () => {
     );
     fireEvent.change(urlInput, { target: { value: 'http://newlidarr:9090' } });
 
-    const importInput = container.querySelector(
-      'input[placeholder="/downloads"]'
+    // Open advanced to access another editable field (yandex_delay number input)
+    const advBtn = container.querySelector('.adv-toggle');
+    fireEvent.click(advBtn);
+    const numInputs = container.querySelectorAll(
+      '.set-section-body .num-unit input'
     );
-    fireEvent.change(importInput, { target: { value: '/new/downloads' } });
+    fireEvent.change(numInputs[0], { target: { value: '5' } });
 
     const saveBtn = container.querySelector('.btn.btn-primary');
     fireEvent.click(saveBtn);
@@ -281,7 +284,7 @@ describe('SettingsScreen — save puts', () => {
     await waitFor(() => expect(onSave).toHaveBeenCalledOnce());
     const [puts] = onSave.mock.calls[0];
     expect(puts.lidarr_url).toBe('http://newlidarr:9090');
-    expect(puts.lidarr_import_path).toBe('/new/downloads');
+    expect(Object.keys(puts).length).toBeGreaterThan(1);
   });
 });
 
@@ -433,6 +436,37 @@ describe('SettingsScreen — validation', () => {
       expect(saveBtnAfter.disabled).toBe(false);
     }
   });
+
+  it('a legacy invalid committed value does not block saving an unrelated field', async () => {
+    // Pre-trim DB value (flac is no longer a ytdlp_format choice). It resolves
+    // fine on the backend and must NOT make hasErrors true / disable saving an
+    // unrelated, untouched-but-edited field.
+    const onSave = vi.fn().mockResolvedValue(undefined);
+    const committed = makeCommitted({
+      ytdlp_format: makeItem('ytdlp_format', {
+        type: 'enum',
+        value: 'flac',
+        source: 'db',
+      }),
+    });
+    const { container } = renderScreen({ onSave, committed });
+
+    // Edit an unrelated field (lidarr_url) to a valid value.
+    const input = container.querySelector(
+      'input[placeholder="http://lidarr:8686"]'
+    );
+    fireEvent.change(input, { target: { value: 'http://lidarr:9999' } });
+
+    const saveBtn = container.querySelector('.btn.btn-primary');
+    expect(saveBtn).toBeTruthy();
+    expect(saveBtn.disabled).toBe(false);
+
+    fireEvent.click(saveBtn);
+    await waitFor(() => expect(onSave).toHaveBeenCalledOnce());
+    const [puts] = onSave.mock.calls[0];
+    // Only the edited field is written; the legacy flac value is untouched.
+    expect(puts).toEqual({ lidarr_url: 'http://lidarr:9999' });
+  });
 });
 
 // ── Yandex warning ────────────────────────────────────────────────────────────
@@ -556,15 +590,16 @@ describe('SettingsScreen — backend error in save bar', () => {
 // ── Section nav ───────────────────────────────────────────────────────────────
 
 describe('SettingsScreen — section nav', () => {
-  it('renders all four nav items', () => {
+  it('renders all five nav items including Environment', () => {
     const { container } = renderScreen();
     const navBtns = container.querySelectorAll('.settings-nav button');
-    expect(navBtns.length).toBe(4);
+    expect(navBtns.length).toBe(5);
     const labels = Array.from(navBtns).map((b) => b.textContent);
     expect(labels.some((l) => l.includes(t.nav_sources))).toBe(true);
     expect(labels.some((l) => l.includes(t.nav_lidarr))).toBe(true);
     expect(labels.some((l) => l.includes(t.nav_download))).toBe(true);
     expect(labels.some((l) => l.includes(t.nav_advanced))).toBe(true);
+    expect(labels.some((l) => l.includes(t.nav_environment))).toBe(true);
   });
 
   it('first section nav button has "on" class by default', () => {
@@ -579,10 +614,9 @@ describe('SettingsScreen — section nav', () => {
 describe('SettingsScreen — advanced section', () => {
   it('is collapsed by default', () => {
     const { container } = renderScreen();
-    // The set-section-body inside the advanced section should not be visible
-    const advSection = Array.from(
-      container.querySelectorAll('.set-section')
-    ).at(-1);
+    // Find the advanced section by its toggle button
+    const advToggle = container.querySelector('.adv-toggle');
+    const advSection = advToggle.closest('.set-section');
     expect(advSection.querySelector('.set-section-body')).toBeNull();
   });
 
@@ -590,9 +624,7 @@ describe('SettingsScreen — advanced section', () => {
     const { container } = renderScreen();
     const advToggle = container.querySelector('.adv-toggle');
     fireEvent.click(advToggle);
-    const advSection = Array.from(
-      container.querySelectorAll('.set-section')
-    ).at(-1);
+    const advSection = advToggle.closest('.set-section');
     expect(advSection.querySelector('.set-section-body')).toBeTruthy();
   });
 });
@@ -613,52 +645,8 @@ describe('SettingsScreen — encryptionReady', () => {
   });
 });
 
-// ── library_map adapter ───────────────────────────────────────────────────────
-
-describe('SettingsScreen — library_map textarea', () => {
-  it('sends wire form in puts when user fills in the textarea', async () => {
-    const onSave = vi.fn().mockResolvedValue(undefined);
-    const { container } = renderScreen({ onSave });
-
-    const textarea = container.querySelector('textarea.set-input');
-    expect(textarea).toBeTruthy();
-
-    // Type a mapping in UI form (with spaces around =)
-    fireEvent.change(textarea, {
-      target: { value: '/music = /downloads' },
-    });
-
-    const saveBtn = container.querySelector('.btn.btn-primary');
-    fireEvent.click(saveBtn);
-
-    await waitFor(() => expect(onSave).toHaveBeenCalledOnce());
-    const [puts] = onSave.mock.calls[0];
-    // Wire form has no spaces around =
-    expect(puts.library_map).toBe('/music=/downloads');
-  });
-
-  it('textarea shows committed value as UI form on mount', () => {
-    const committed = makeCommitted({
-      library_map: makeItem('library_map', {
-        value: '/a=/b,/c=/d',
-        source: 'db',
-      }),
-    });
-    const { container } = renderScreen({ committed });
-    const textarea = container.querySelector('textarea.set-input');
-    // Should show UI form with spaces
-    expect(textarea.value).toContain(' = ');
-  });
-
-  it('invalid library_map format disables Save', () => {
-    const { container } = renderScreen();
-    const textarea = container.querySelector('textarea.set-input');
-    // Missing "=" in the line
-    fireEvent.change(textarea, { target: { value: 'no-equals-sign' } });
-    const saveBtn = container.querySelector('.btn.btn-primary');
-    expect(saveBtn.disabled).toBe(true);
-  });
-});
+// library_map textarea tests removed: library_map moved to the read-only
+// Environment section in Task 5. Task 6 will add read-only rendering tests.
 
 // ── Source card visibility ────────────────────────────────────────────────────
 
@@ -693,5 +681,167 @@ describe('SettingsScreen — back button', () => {
     expect(backBtn).toBeTruthy();
     fireEvent.click(backBtn);
     expect(onBack).toHaveBeenCalledOnce();
+  });
+});
+
+// ── ytdlp quality — preset select ────────────────────────────────────────────
+
+describe('SettingsScreen — ytdlp quality preset select', () => {
+  it('renders quality as a Select (not NumberUnit) for opus format', () => {
+    const committed = makeCommitted({
+      ytdlp_format: makeItem('ytdlp_format', {
+        type: 'enum',
+        value: 'opus',
+        source: 'default',
+      }),
+      ytdlp_quality: makeItem('ytdlp_quality', {
+        type: 'int',
+        value: '160',
+        source: 'default',
+      }),
+    });
+    const { container } = renderScreen({ committed });
+    expect(container.querySelector('.num-unit')).toBeNull();
+    const selects = container.querySelectorAll('select');
+    expect(selects.length).toBeGreaterThan(0);
+  });
+
+  it('hides quality field for "best" format', () => {
+    const committed = makeCommitted({
+      ytdlp_format: makeItem('ytdlp_format', {
+        type: 'enum',
+        value: 'best',
+        source: 'default',
+      }),
+    });
+    const { container } = renderScreen({ committed });
+    const label = t['dl_ytdlp_quality'];
+    const fieldLabels = container.querySelectorAll('.field-label');
+    const found = Array.from(fieldLabels).find((el) =>
+      el.textContent.includes(label)
+    );
+    expect(found).toBeFalsy();
+  });
+
+  it('format change snaps quality to a valid preset', () => {
+    const committed = makeCommitted({
+      ytdlp_format: makeItem('ytdlp_format', {
+        type: 'enum',
+        value: 'mp3',
+        source: 'default',
+      }),
+      ytdlp_quality: makeItem('ytdlp_quality', {
+        type: 'int',
+        value: '320',
+        source: 'default',
+      }),
+    });
+    const { container } = renderScreen({ committed });
+    // The format select should be present — find it by its current value
+    const formatSelect = Array.from(container.querySelectorAll('select')).find(
+      (s) => s.value === 'mp3'
+    );
+    expect(formatSelect).toBeTruthy();
+    fireEvent.change(formatSelect, { target: { value: 'opus' } });
+    // Quality should be snapped to opus default (160) since 320 is not in opus presets
+    const qualitySelect = Array.from(container.querySelectorAll('select')).find(
+      (s) => s.value === '160'
+    );
+    expect(qualitySelect).toBeTruthy();
+  });
+
+  it('resetting a db-saved format also resets a db-saved quality', async () => {
+    const onSave = vi.fn().mockResolvedValue(undefined);
+    const committed = makeCommitted({
+      ytdlp_format: makeItem('ytdlp_format', {
+        type: 'enum',
+        value: 'mp3',
+        source: 'db',
+      }),
+      ytdlp_quality: makeItem('ytdlp_quality', {
+        type: 'int',
+        value: '320',
+        source: 'db',
+      }),
+    });
+    const { container } = renderScreen({ onSave, committed });
+
+    // The format Field's reset button (db-sourced) — find the field whose value
+    // is the format select and click its reset.
+    const formatSelect = Array.from(container.querySelectorAll('select')).find(
+      (s) => s.value === 'mp3'
+    );
+    const formatField = formatSelect.closest('.field');
+    const resetBtn = formatField.querySelector('.reset-btn');
+    expect(resetBtn).toBeTruthy();
+    fireEvent.click(resetBtn);
+
+    const saveBtn = container.querySelector('.btn.btn-primary');
+    fireEvent.click(saveBtn);
+
+    await waitFor(() => expect(onSave).toHaveBeenCalledOnce());
+    const [, deletes] = onSave.mock.calls[0];
+    // Both keys reset so the backend resolves a consistent format/quality pair
+    // (otherwise the stale 320 is blank under opus presets after reload).
+    expect(deletes).toContain('ytdlp_format');
+    expect(deletes).toContain('ytdlp_quality');
+  });
+});
+
+// ── Environment section — read-only rendering ─────────────────────────────────
+
+describe('SettingsScreen — Environment section', () => {
+  it('renders a section with class "set-section" for environment', () => {
+    const { container } = renderScreen();
+    const sections = container.querySelectorAll('.set-section');
+    expect(sections.length).toBe(5);
+  });
+
+  it('renders the four environment keys as readonly fields (no inputs)', () => {
+    const { container } = renderScreen();
+    // Find the environment section — it is the last set-section
+    const envSection = Array.from(
+      container.querySelectorAll('.set-section')
+    ).at(-1);
+    expect(envSection).toBeTruthy();
+    const readonlyFields = envSection.querySelectorAll('.is-readonly');
+    expect(readonlyFields.length).toBe(4);
+  });
+
+  it('readonly environment fields have no text or number inputs', () => {
+    const { container } = renderScreen();
+    const envSection = Array.from(
+      container.querySelectorAll('.set-section')
+    ).at(-1);
+    const inputs = envSection.querySelectorAll('input, textarea, select');
+    expect(inputs.length).toBe(0);
+  });
+
+  it('shows a file_status badge when the committed item has file_status', () => {
+    const committed = makeCommitted({
+      ytmusic_oauth_file: makeItem('ytmusic_oauth_file', {
+        value: '/config/oauth.json',
+        source: 'env',
+        file_status: 'ok',
+      }),
+    });
+    const { container } = renderScreen({ committed });
+    const badge = container.querySelector('.status-badge');
+    expect(badge).toBeTruthy();
+    expect(badge.className).toContain('status-ok');
+  });
+
+  it('shows the committed value for import path', () => {
+    const committed = makeCommitted({
+      lidarr_import_path: makeItem('lidarr_import_path', {
+        value: '/downloads/music',
+        source: 'env',
+      }),
+    });
+    const { container } = renderScreen({ committed });
+    const envSection = Array.from(
+      container.querySelectorAll('.set-section')
+    ).at(-1);
+    expect(envSection.textContent).toContain('/downloads/music');
   });
 });

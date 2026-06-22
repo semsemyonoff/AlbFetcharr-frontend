@@ -77,6 +77,8 @@ production `base`, and the Vitest block.
     ├── select-step.jsx     # Step 1 — pick wanted albums
     ├── results-step.jsx    # Step 2 — per-album source candidates
     ├── download-step.jsx   # Step 3 — live download progress (SSE)
+    ├── wanted-helpers.js      # mapWantedAlbum / formatDuration / albumTypeLabel / deriveLibraries
+    ├── cover.jsx              # <Cover coverUrl fallback lg /> — real cover art with vinyl-stripe fallback
     ├── select-helpers.js      # sortAlbums / filterAlbums / paginate
     ├── results-helpers.js     # scoreCandidate (Levenshtein) / getBestCandidate / buildDownloadItems
     ├── download-helpers.js    # parseSSEEvent / applyProgressUpdate
@@ -86,7 +88,7 @@ production `base`, and the Vitest block.
     ├── settings-fields.jsx    # OriginBadge / ResetBtn / Field / Toggle / Segmented / Select / SecretField / …
     ├── settings-step.jsx      # SettingsScreen — global settings screen with draft, nav, save bar
     ├── session-overrides.jsx  # ThisRunPanel — per-download Tier-3 overrides, pre-filled from global defaults
-    ├── i18n.js                # I18N (en/ru) tables + AGO_FNS + I18N_FNS/pluralRu (interpolation + RU plurals)
+    ├── i18n.js                # I18N (en/ru) tables + I18N_FNS/pluralRu (interpolation + RU plurals)
     ├── icons.jsx              # <Icon name=… /> named SVG set (incl. eye/eyeOff for SecretField)
     ├── tweaks-panel.jsx       # Developer overlay (unrelated to Settings — its own UI kit + useTweaks hook)
     ├── styles.css             # All styling via CSS variables; light/dark/system themes; responsive (1024/640/380)
@@ -159,12 +161,25 @@ Key modules:
 - **`settings-catalog.js`** — the only place that maps backend registry keys to
   UI controls (label, group, control type, choices). `SETTINGS_FIELDS` covers
   every surfaced global key; `SESSION_FIELDS` covers every Tier-3 session key for
-  the "This run" panel. Groups follow the backend's `provider` tag (Yandex knobs
-  stay under Yandex; yt-dlp under yt-dlp — no cross-source "general" group).
+  the "This run" panel. A dedicated **Environment** section (last in nav,
+  `id: 'environment'`) holds the four env-only readonly keys (`ytmusic_oauth_file`,
+  `ytdlp_cookies_file`, `lidarr_import_path`, `library_map`) with `control:
+'readonly'` — rendered without inputs or reset buttons, showing only the resolved
+  value, origin badge, and (for the two file-path keys) a `file_status` badge from
+  the backend. Groups follow the backend's `provider` tag (Yandex knobs stay under
+  Yandex; yt-dlp under yt-dlp — no cross-source "general" group).
 - **`settings-helpers.js`** — pure logic: `indexSettings`, `diffDraft` (→ `{puts,
 deletes}`), `effectiveValue`/`effectiveSource`, `buildOverridesPayload`, value
   codecs (`boolToStr`/`strToBool`, `coverResToUi`/`uiToCoverRes`,
-  `libraryMapToUi`/`uiToLibraryMap`), and advisory validators.
+  `libraryMapToUi`/`uiToLibraryMap`), and advisory validators. Per-format yt-dlp
+  quality presets live here too: `YTDLP_QUALITY_PRESETS` (format → ordered kbps
+  options plus a default), `qualityPresetsFor(format)` (returns `null` for
+  passthrough), `snapQuality(format, current)` (snaps to the format default when
+  the current kbps isn't a valid preset), and `isPassthroughYtdlp(format)` (true
+  only for `best`). The stored value stays an int (kbps) — presets are a pure UI
+  concern; `ytdlp_quality` renders as a preset `Select` (not a number input), is
+  hidden for `best`, and re-snaps on format change. Both the Settings screen and
+  the "This run" panel apply this.
 - **`settings-fields.jsx`** — props-driven atomic controls: `OriginBadge`,
   `ResetBtn`, `Toggle`, `Segmented`, `Select`, `TextInput`, `NumberUnit`,
   `SecretField` (blocked/set/env/unset/editing state machine from
@@ -190,10 +205,20 @@ their contracts):
 - `GET /api/config` — default language / theme / `encryption_enabled` (whether
   `ALBFETCHARR_SECRET_KEY` is set; controls SecretField's blocked state).
 - `GET /api/settings` — array of `{key, group, type, scope, secret, source,
-value, is_set, preview}` for every surfaced setting.
+value, is_set, preview, readonly, file_status}` for every surfaced setting.
+  `readonly: bool` gates PUT writes in the backend; `file_status` is populated only
+  for `ytmusic_oauth_file` (`ok`/`missing`/`invalid`) and `ytdlp_cookies_file`
+  (`found`/`missing`), `null` otherwise.
 - `PUT /api/settings` body `{key: stringValue}` — upsert one or more settings.
 - `DELETE /api/settings/<key>` — reset one setting to env/default.
-- `GET /api/wanted` — Lidarr wanted/missing albums.
+- `GET /api/wanted` — Lidarr wanted/missing albums; returns array of
+  `{artist, title, album_id, release_date, album_type, duration, track_count,
+cover_url, root_folder}`. Mapped to the UI shape by `mapWantedAlbum` in
+  `wanted-helpers.js` (`duration` is milliseconds; `release_date` may be `"N/A"`).
+- `GET /api/version` — service and bundled-tool versions; returns
+  `{albfetcharr, yt_dlp, ymd}` (mapped to `{service, ytdlp, ymd}` in the
+  `VersionFooter`). Fetched once on mount; the footer renders nothing until
+  all three fields arrive.
 - `GET /api/sources` — available source providers.
 - `GET /api/search` — candidate matches for an album.
 - `POST /api/download` body `{items, overrides?}` — start a download; optional

@@ -249,7 +249,7 @@ function makeSettingsArray(overrides = []) {
     },
     {
       key: 'ytdlp_format',
-      value: 'flac',
+      value: 'opus',
       source: 'default',
       scope: 'session',
       secret: false,
@@ -376,6 +376,11 @@ function setupBasicFetch(overrides = {}) {
       { id: 'yandex', name: 'Yandex Music' },
       { id: 'youtube_music', name: 'YouTube Music' },
     ]),
+    'GET /api/version': ok({
+      albfetcharr: '1.2.3',
+      yt_dlp: '2024.11.18',
+      ymd: '0.9.5',
+    }),
     ...overrides,
   };
   globalThis.fetch = vi.fn((url, opts = {}) => {

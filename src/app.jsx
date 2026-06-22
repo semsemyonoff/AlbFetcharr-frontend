@@ -28,9 +28,32 @@ import {
   indexSettings,
   buildOverridesPayload,
   typeError,
-  isLosslessYtdlp,
+  isPassthroughYtdlp,
 } from './settings-helpers.js';
 import { SESSION_FIELDS } from './settings-catalog.js';
+import { mapWantedAlbum, deriveLibraries } from './wanted-helpers.js';
+
+const VersionFooter = ({ versions }) => {
+  if (!versions) return null;
+  return (
+    <footer className="app-versions">
+      <span className="ver-item ver-app">
+        <span className="ver-label">AlbFetcharr</span>
+        <span className="ver-num">v{versions.service}</span>
+      </span>
+      <span className="ver-sep">·</span>
+      <span className="ver-item ver-ytdlp">
+        <span className="ver-label">yt-dlp</span>
+        <span className="ver-num">{versions.ytdlp}</span>
+      </span>
+      <span className="ver-sep">·</span>
+      <span className="ver-item ver-ymd">
+        <span className="ver-label">ymd</span>
+        <span className="ver-num">v{versions.ymd}</span>
+      </span>
+    </footer>
+  );
+};
 
 function nowHHMMSS() {
   const d = new Date();
@@ -168,26 +191,6 @@ const Stepper = ({ step, lang }) => {
   );
 };
 
-function mapBackendAlbum(album) {
-  const year = album.release_date
-    ? parseInt(album.release_date.split('-')[0])
-    : new Date().getFullYear();
-  return {
-    id: String(album.album_id),
-    artist: album.artist || 'Unknown Artist',
-    album: album.title || 'Unknown Album',
-    year,
-    tracks: 0,
-    addedDaysAgo: album.added
-      ? Math.max(
-          0,
-          Math.floor((Date.now() - new Date(album.added).getTime()) / 86400000)
-        )
-      : 0,
-    root_folder: album.root_folder,
-  };
-}
-
 function resolveTheme(theme) {
   if (theme === 'system') {
     const darkMode = window.matchMedia('(prefers-color-scheme: dark)').matches;
@@ -214,10 +217,41 @@ export default function App() {
   const [view, setView] = React.useState('app');
   const [runOverrides, setRunOverrides] = React.useState({});
 
+  // Version footer state
+  const [versions, setVersions] = React.useState(null);
+
+  React.useEffect(() => {
+    fetch('/api/version')
+      .then((res) => {
+        if (!res.ok) return;
+        return res.json();
+      })
+      .then((data) => {
+        if (
+          data &&
+          typeof data.albfetcharr === 'string' &&
+          data.albfetcharr &&
+          typeof data.yt_dlp === 'string' &&
+          data.yt_dlp &&
+          typeof data.ymd === 'string' &&
+          data.ymd
+        ) {
+          setVersions({
+            service: data.albfetcharr,
+            ytdlp: data.yt_dlp,
+            ymd: data.ymd,
+          });
+        }
+      })
+      .catch(() => {});
+  }, []);
+
   // Lidarr fetch state
   const [fetchState, setFetchState] = React.useState('loading');
   const [albums, setAlbums] = React.useState([]);
-  const [lastSync, setLastSync] = React.useState('');
+  // Whether a wanted-list sync has completed. Kept as a flag (not a pre-built
+  // string) so the "last sync" label re-translates when the language changes.
+  const [hasSynced, setHasSynced] = React.useState(false);
   const [availableSources, setAvailableSources] = React.useState([]);
 
   const runFetch = React.useCallback(async () => {
@@ -234,16 +268,16 @@ export default function App() {
         setFetchState('empty');
         setAlbums([]);
       } else {
-        const mapped = data.map((album) => mapBackendAlbum(album));
+        const mapped = data.map((album) => mapWantedAlbum(album));
         setAlbums(mapped);
         setFetchState('ready');
-        setLastSync(I18N[lang].just_now);
+        setHasSynced(true);
       }
     } catch (err) {
       console.error('Failed to fetch wanted albums:', err);
       setFetchState('error');
     }
-  }, [lang]);
+  }, []);
 
   const fetchSources = React.useCallback(async () => {
     try {
@@ -577,11 +611,12 @@ export default function App() {
 
     // Block the download if any "This run" override is invalid — otherwise the
     // bad value would be sent and rejected by the backend with a 422.
-    // ytdlp_quality is inactive (and its error hidden in the panel) when the
-    // effective format is lossless, so skip it to match what the user can see.
+    // ytdlp_quality is inactive (and its field hidden in the panel) when the
+    // effective format is passthrough ("best"), so skip it to match what the
+    // user can see.
     const effectiveFormat =
       runOverrides.ytdlp_format ?? committedSettings.ytdlp_format?.value;
-    const qualityInactive = isLosslessYtdlp(effectiveFormat);
+    const qualityInactive = isPassthroughYtdlp(effectiveFormat);
     const sessionInvalid = SESSION_FIELDS.some((f) => {
       if (f.key === 'ytdlp_quality' && qualityInactive) return false;
       const item = committedSettings[f.key];
@@ -820,7 +855,11 @@ export default function App() {
                 ? 'err'
                 : 'ok'
           }
-          lastSync={fetchState === 'ready' ? `${t.last_sync}: ${lastSync}` : ''}
+          lastSync={
+            fetchState === 'ready' && hasSynced
+              ? `${t.last_sync}: ${t.just_now}`
+              : ''
+          }
           inSettings={view === 'settings'}
           onSettingsToggle={() =>
             setView((v) => (v === 'settings' ? 'app' : 'settings'))
@@ -862,6 +901,7 @@ export default function App() {
                   sources={sources}
                   setSources={setSources}
                   availableSources={availableSources}
+                  availableLibraries={deriveLibraries(albums)}
                   onSearch={onSearch}
                 />
               </>
@@ -925,6 +965,7 @@ export default function App() {
             )}
           </>
         )}
+        <VersionFooter versions={versions} />
       </div>
 
       {toastMessage && (

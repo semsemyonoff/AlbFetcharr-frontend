@@ -40,6 +40,26 @@ export function applyAccent(palette, el) {
   Object.entries(vars).forEach(([k, v]) => root.style.setProperty(k, v));
 }
 
+// The distinct logo-palette colors, used to tint per-library swatches so each
+// library reads as a different color. Derived from ACCENT_PALETTES (the same
+// blue/teal/green/violet/orange/amber family as the logo) with duplicates
+// dropped, preserving first-seen order.
+export const LIBRARY_SWATCHES = [...new Set(ACCENT_PALETTES.flat())];
+
+// Deterministically map a library name to one of the LIBRARY_SWATCHES colors.
+// The same name always yields the same color (so a library is recognizable at a
+// glance), while different names spread across the palette. Returns the first
+// swatch for empty/missing input.
+export function libraryColor(name) {
+  const key = typeof name === 'string' ? name : '';
+  let hash = 0;
+  for (let i = 0; i < key.length; i++) {
+    hash = (hash * 31 + key.charCodeAt(i)) | 0;
+  }
+  const idx = Math.abs(hash) % LIBRARY_SWATCHES.length;
+  return LIBRARY_SWATCHES[idx];
+}
+
 // Parse a persisted accent value (a JSON-encoded palette) back into an array.
 // Returns the default palette for null/invalid input.
 export function parseAccent(stored) {
