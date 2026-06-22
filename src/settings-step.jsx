@@ -419,6 +419,7 @@ export function SettingsScreen({
 
   const youtubeOn = strToBool(effVal('enable_youtube_music'));
   const soundcloudOn = strToBool(effVal('enable_soundcloud'));
+  const bandcampOn = strToBool(effVal('enable_bandcamp'));
   const ytdlpFormat = effVal('ytdlp_format');
 
   const dlYandexToggles = fieldsForGroup('download', 'dl-yandex').filter(
@@ -637,6 +638,41 @@ export function SettingsScreen({
                         }
                       />
                     </Field>
+                  </div>
+                )}
+              </div>
+
+              {/* Bandcamp card */}
+              <div
+                className={`source-card${bandcampOn ? '' : ' off'}`}
+                style={{ '--src-accent': 'var(--src-bandcamp)' }}
+              >
+                <div className="source-card-head">
+                  <div className="src-mark">
+                    <Icon name="disc" size={15} />
+                  </div>
+                  <div>
+                    <div className="src-name">{t.bandcamp}</div>
+                    <div className="src-sub">bandcamp.com</div>
+                  </div>
+                  <div className="toggle-slot">
+                    <OriginBadge source={effSrc('enable_bandcamp')} t={t} />
+                    <ResetBtn
+                      show={canReset('enable_bandcamp')}
+                      title={t.reset_inherited}
+                      onClick={() => resetField('enable_bandcamp')}
+                    />
+                    <Toggle
+                      value={bandcampOn}
+                      onChange={(v) =>
+                        setField('enable_bandcamp', boolToStr(v))
+                      }
+                    />
+                  </div>
+                </div>
+                {bandcampOn && (
+                  <div className="source-card-body">
+                    <div className="field-hint">{t.bc_only}</div>
                   </div>
                 )}
               </div>

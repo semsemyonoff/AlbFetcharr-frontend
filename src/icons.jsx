@@ -34,6 +34,12 @@ const ICONS = {
   chevronUp: <polyline points="6 15 12 9 18 15" />,
   chevronLeft: <polyline points="15 6 9 12 15 18" />,
   chevronRight: <polyline points="9 6 15 12 9 18" />,
+  disc: (
+    <>
+      <circle cx="12" cy="12" r="9" />
+      <circle cx="12" cy="12" r="2.5" />
+    </>
+  ),
   refresh: (
     <>
       <path d="M21 12a9 9 0 1 1-3-6.7" />

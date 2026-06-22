@@ -42,6 +42,7 @@
   --src-yandex: #ffcc00;
   --src-youtube: #ff4658;
   --src-soundcloud: #ff7a45;
+  --src-bandcamp: #1da0c3;
 }
 
 html[data-theme='light'] {
@@ -1026,6 +1027,10 @@ html[data-theme='light'] .pg-btn.on {
   background: var(--src-soundcloud);
   box-shadow: 0 0 0 3px rgba(255, 122, 69, 0.15);
 }
+.src-chip[data-src='bandcamp'].on .src-dot {
+  background: var(--src-bandcamp);
+  box-shadow: 0 0 0 3px rgba(29, 160, 195, 0.15);
+}
 .src-chip.on[data-src='yandex'] {
   border-color: var(--src-yandex);
   background: rgba(255, 204, 0, 0.08);
@@ -1037,6 +1042,10 @@ html[data-theme='light'] .pg-btn.on {
 .src-chip.on[data-src='soundcloud'] {
   border-color: var(--src-soundcloud);
   background: rgba(255, 122, 69, 0.08);
+}
+.src-chip.on[data-src='bandcamp'] {
+  border-color: var(--src-bandcamp);
+  background: rgba(29, 160, 195, 0.08);
 }
 
 /* ============================================================
@@ -1191,6 +1200,9 @@ html[data-theme='light'] .pg-btn.on {
 }
 .src-tab[data-src='soundcloud'] .src-dot {
   background: var(--src-soundcloud);
+}
+.src-tab[data-src='bandcamp'] .src-dot {
+  background: var(--src-bandcamp);
 }
 .src-tab .badge-count {
   background: var(--surface-2);
@@ -1545,6 +1557,10 @@ html[data-theme='light'] .pg-btn.on {
 .src-badge.soundcloud {
   color: var(--src-soundcloud);
   background: rgba(255, 122, 69, 0.12);
+}
+.src-badge.bandcamp {
+  color: var(--src-bandcamp);
+  background: rgba(29, 160, 195, 0.12);
 }
 
 /* Inline log */
