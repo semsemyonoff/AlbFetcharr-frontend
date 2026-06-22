@@ -144,11 +144,7 @@ const Header = ({
       >
         <Icon
           name={
-            theme === 'system'
-              ? 'monitor'
-              : theme === 'dark'
-                ? 'sun'
-                : 'moon'
+            theme === 'system' ? 'monitor' : theme === 'dark' ? 'sun' : 'moon'
           }
           size={18}
         />
@@ -520,9 +516,7 @@ export default function App() {
             );
             if (!result) return item;
 
-            const srcResults = result.results.filter(
-              (r) => r.source === srcId
-            );
+            const srcResults = result.results.filter((r) => r.source === srcId);
             const srcError = result.errors.find((e) => e.source === srcId);
             const albumRef = { artist: result.artist, album: result.title };
 
@@ -556,9 +550,7 @@ export default function App() {
             const albumId = String(result.album_id);
             if (next[albumId]) return; // already chosen
 
-            const srcResults = result.results.filter(
-              (r) => r.source === srcId
-            );
+            const srcResults = result.results.filter((r) => r.source === srcId);
             if (srcResults.length === 0) return;
 
             const cands = buildSourceCandidates(

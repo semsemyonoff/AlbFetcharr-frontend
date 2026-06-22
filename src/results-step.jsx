@@ -72,9 +72,7 @@ function AlbumCard({
     const hasAny = sources.some(
       (s) => Array.isArray(item.results[s]) && item.results[s].length > 0
     );
-    const allResolved = sources.every(
-      (s) => !isSourceLoading(item.results[s])
-    );
+    const allResolved = sources.every((s) => !isSourceLoading(item.results[s]));
     if (!hasAny && allResolved) {
       pillNode = <span className="chosen-pill err">{t.no_matches}</span>;
     } else if (!hasAny) {

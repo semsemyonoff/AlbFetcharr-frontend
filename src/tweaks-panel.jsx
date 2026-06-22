@@ -1,8 +1,10 @@
-/* eslint-disable react-hooks/refs --
+/* eslint-disable react-hooks/refs, react-refresh/only-export-components --
    This dev-only "tweaks" panel reads refs during render by design: the panel
    position comes from a persisted drag-offset ref (the DOM is moved imperatively
    mid-drag), and TweakRadio keeps a latest-value ref in sync for its drag
-   handler. Both are intentional and can't be disabled per-line on JSX attributes. */
+   handler. Both are intentional and can't be disabled per-line on JSX attributes.
+   useTweaks is exported alongside the components intentionally — splitting it to
+   a separate file would be churn for a dev-only widget. */
 import React from 'react';
 
 const __TWEAKS_STYLE = `
