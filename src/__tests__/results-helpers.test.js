@@ -1,11 +1,98 @@
 import { describe, it, expect } from 'vitest';
 import {
+  isSourceLoading,
+  buildSourceCandidates,
   scoreCandidate,
   getBestCandidate,
   buildDownloadItems,
 } from '../results-helpers';
 
 describe('results-helpers', () => {
+  describe('isSourceLoading', () => {
+    it('returns true for a loading sentinel', () => {
+      expect(isSourceLoading({ loading: true })).toBe(true);
+    });
+
+    it('returns false for a resolved array', () => {
+      expect(isSourceLoading([])).toBe(false);
+    });
+
+    it('returns false for an error object', () => {
+      expect(isSourceLoading({ message: 'Network error' })).toBe(false);
+    });
+
+    it('returns false for null', () => {
+      expect(isSourceLoading(null)).toBe(false);
+    });
+
+    it('returns false for undefined (absent source key)', () => {
+      expect(isSourceLoading(undefined)).toBe(false);
+    });
+  });
+
+  describe('buildSourceCandidates', () => {
+    const albumRef = { artist: 'The Beatles', album: 'Abbey Road' };
+
+    const makeRaw = (overrides = {}) => ({
+      match_artists: ['The Beatles'],
+      match_title: 'Abbey Road',
+      match_url: 'https://music.yandex.ru/album/1',
+      year: 1969,
+      track_count: 17,
+      cover_url: 'https://example.com/cover.jpg',
+      ...overrides,
+    });
+
+    it('builds a candidate with the correct id format', () => {
+      const cands = buildSourceCandidates([makeRaw()], 'yandex', 42, albumRef);
+      expect(cands[0].id).toBe('42-yandex-0');
+    });
+
+    it('assigns match score via scoreCandidate', () => {
+      const cands = buildSourceCandidates([makeRaw()], 'yandex', 42, albumRef);
+      expect(cands[0].match).toBeGreaterThan(0.9);
+    });
+
+    it('normalises match_artists from a string', () => {
+      const raw = makeRaw({ match_artists: 'Artist A, Artist B' });
+      const cands = buildSourceCandidates([raw], 'yandex', 42, albumRef);
+      expect(cands[0].match_artists).toEqual(['Artist A', 'Artist B']);
+    });
+
+    it('keeps match_artists when already an array', () => {
+      const raw = makeRaw({ match_artists: ['A', 'B'] });
+      const cands = buildSourceCandidates([raw], 'yandex', 42, albumRef);
+      expect(cands[0].match_artists).toEqual(['A', 'B']);
+    });
+
+    it('uses first artist as the artist field fallback', () => {
+      const cands = buildSourceCandidates([makeRaw()], 'yandex', 42, albumRef);
+      expect(cands[0].artist).toBe('The Beatles');
+    });
+
+    it('propagates all display fields', () => {
+      const cands = buildSourceCandidates([makeRaw()], 'yandex', 42, albumRef);
+      const c = cands[0];
+      expect(c.source).toBe('yandex');
+      expect(c.year).toBe(1969);
+      expect(c.track_count).toBe(17);
+      expect(c.cover_url).toBe('https://example.com/cover.jpg');
+      expect(c.match_url).toBe('https://music.yandex.ru/album/1');
+    });
+
+    it('returns multiple candidates with sequential ids', () => {
+      const cands = buildSourceCandidates(
+        [makeRaw(), makeRaw({ match_title: 'Abbey Road (Remaster)' })],
+        'yandex',
+        42,
+        albumRef
+      );
+      expect(cands).toHaveLength(2);
+      expect(cands[0].id).toBe('42-yandex-0');
+      expect(cands[1].id).toBe('42-yandex-1');
+    });
+  });
+
   describe('scoreCandidate', () => {
     it('returns high score for exact match', () => {
       const album = { artist: 'The Beatles', album: 'Abbey Road' };
