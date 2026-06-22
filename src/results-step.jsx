@@ -5,7 +5,7 @@ import { Cover } from './cover.jsx';
 import { formatDuration, albumTypeLabel } from './wanted-helpers.js';
 import { isSourceLoading } from './results-helpers.js';
 
-const DEFAULT_SOURCES = ['yandex', 'youtube_music', 'soundcloud'];
+const DEFAULT_SOURCES = ['yandex', 'youtube_music', 'soundcloud', 'bandcamp'];
 
 function AlbumCard({
   item,

@@ -54,6 +54,7 @@ export const I18N = {
     yandex: 'Yandex Music',
     youtube_music: 'YouTube Music',
     soundcloud: 'SoundCloud',
+    bandcamp: 'Bandcamp',
     tab_all: 'All sources',
     no_candidates: 'No candidates from this source',
     search_failed: 'Search failed',
@@ -156,6 +157,8 @@ export const I18N = {
       'Without OAuth, search works anonymously but YouTube may return empty results.',
     sc_only:
       'No credentials required. SoundCloud searches and downloads anonymously.',
+    bc_only:
+      'No credentials required. Bandcamp searches and downloads anonymously. Best for indie / self-published artists.',
     sc_include_playlists: 'Include playlists in search',
     sc_include_playlists_hint:
       'Off: only releases tagged as albums. On: also search user playlists — catches releases not marked as albums, but may surface fan compilations and mixtapes.',
@@ -169,7 +172,7 @@ export const I18N = {
     conn_test: 'Test connection',
     dl_yandex_quality: 'Yandex quality',
     dl_group_yandex: 'Yandex Music',
-    dl_group_ytdlp: 'yt-dlp · YouTube & SoundCloud',
+    dl_group_ytdlp: 'yt-dlp · YouTube, SoundCloud & Bandcamp',
     dl_group_general: 'General',
     dl_lyrics_yandex_note: 'Lyrics are fetched from Yandex Music only.',
     dl_ytdlp_format: 'Format',
@@ -198,7 +201,7 @@ export const I18N = {
     adv_compat_hint:
       'Deviates from standard tag formatting for broader player compatibility. 0 — standard mutagen tags. 1 — for m4a: multi-value tags (artists) use a semicolon separator: Artist1; Artist2.',
     adv_cookies: 'Cookies file path',
-    adv_cookies_note: 'Shared by YouTube and SoundCloud downloads.',
+    adv_cookies_note: 'Shared by YouTube, SoundCloud and Bandcamp downloads.',
     adv_log_level: 'Log level',
     adv_log_level_hint: 'Verbosity of the backend server logs.',
     show_advanced: 'Show advanced',
@@ -280,6 +283,7 @@ export const I18N = {
     yandex: 'Яндекс Музыка',
     youtube_music: 'YouTube Music',
     soundcloud: 'SoundCloud',
+    bandcamp: 'Bandcamp',
     tab_all: 'Все источники',
     no_candidates: 'Нет кандидатов из этого источника',
     search_failed: 'Поиск не удался',
@@ -383,6 +387,8 @@ export const I18N = {
     yt_oauth_help:
       'Без OAuth поиск работает анонимно, но YouTube может возвращать пустые результаты.',
     sc_only: 'Учётные данные не требуются. SoundCloud ищет и качает анонимно.',
+    bc_only:
+      'Учётные данные не требуются. Bandcamp ищет и качает анонимно. Лучше всего подходит для инди и самостоятельных артистов.',
     sc_include_playlists: 'Включать плейлисты в поиск',
     sc_include_playlists_hint:
       'Выкл: только релизы с тегом «альбом». Вкл: искать и в пользовательских плейлистах — ловит релизы без тега альбома, но может подмешивать фан-сборники и миксы.',
@@ -397,7 +403,7 @@ export const I18N = {
     conn_test: 'Проверить соединение',
     dl_yandex_quality: 'Качество Yandex',
     dl_group_yandex: 'Yandex Music',
-    dl_group_ytdlp: 'yt-dlp · YouTube и SoundCloud',
+    dl_group_ytdlp: 'yt-dlp · YouTube, SoundCloud и Bandcamp',
     dl_group_general: 'Общие',
     dl_lyrics_yandex_note: 'Тексты загружаются только из Yandex Music.',
     dl_ytdlp_format: 'Формат',
@@ -426,7 +432,7 @@ export const I18N = {
     adv_compat_hint:
       'Отклонение от стандартного формата тегов для совместимости с большим числом плееров. 0 — стандартные теги mutagen. 1 — для m4a: многозначные теги (артисты) пишутся через точку с запятой: Artist1; Artist2.',
     adv_cookies: 'Путь к файлу cookies',
-    adv_cookies_note: 'Используется загрузками YouTube и SoundCloud.',
+    adv_cookies_note: 'Используется загрузками YouTube, SoundCloud и Bandcamp.',
     adv_log_level: 'Уровень логирования',
     adv_log_level_hint: 'Подробность логов серверной части.',
     show_advanced: 'Показать дополнительно',

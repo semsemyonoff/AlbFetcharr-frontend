@@ -66,7 +66,7 @@ export const LOG_LEVEL_CHOICES = [
 //
 // control ∈ {toggle, segmented, select, text, number, coverResolution, secret}
 // group: UI sub-group within a section (used for dl-group rendering)
-// sourceCard: for the 'sources' section — which provider card (yandex/youtube/soundcloud)
+// sourceCard: for the 'sources' section — which provider card (yandex/youtube/soundcloud/bandcamp)
 
 export const SETTINGS_FIELDS = [
   // ── Sources — Yandex card ─────────────────────────────────────────────────
@@ -130,6 +130,16 @@ export const SETTINGS_FIELDS = [
     section: 'sources',
     group: 'sources',
     sourceCard: 'soundcloud',
+  },
+
+  // ── Sources — Bandcamp card ───────────────────────────────────────────────
+  {
+    key: 'enable_bandcamp',
+    control: 'toggle',
+    labelKey: 'enabled',
+    section: 'sources',
+    group: 'sources',
+    sourceCard: 'bandcamp',
   },
 
   // ── Lidarr ────────────────────────────────────────────────────────────────

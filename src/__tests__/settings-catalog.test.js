@@ -34,6 +34,7 @@ const BACKEND_REGISTRY_KEYS = new Set([
   'enable_youtube_music',
   'enable_soundcloud',
   'soundcloud_include_playlists',
+  'enable_bandcamp',
   'yandex_delay',
   'yandex_compat_level',
   'yandex_unsafe_path',
@@ -301,6 +302,7 @@ describe('SESSION_FIELDS — Tier-3 subset', () => {
       'enable_yandex',
       'enable_youtube_music',
       'enable_soundcloud',
+      'enable_bandcamp',
       'yandex_token',
       'ytmusic_client_secret',
       'lidarr_api_key',
@@ -427,6 +429,12 @@ describe('accessor helpers', () => {
   it('fieldsForSourceCard("soundcloud") returns enable_soundcloud', () => {
     const keys = fieldsForSourceCard('soundcloud').map((f) => f.key);
     expect(keys).toContain('enable_soundcloud');
+  });
+
+  it('fieldsForSourceCard("bandcamp") returns enable_bandcamp', () => {
+    const keys = fieldsForSourceCard('bandcamp').map((f) => f.key);
+    expect(keys).toContain('enable_bandcamp');
+    keys.forEach((k) => expect(k).toBe('enable_bandcamp'));
   });
 
   it('sessionFieldsForGroup("session-yandex") returns Yandex session fields', () => {
