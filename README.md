@@ -1,88 +1,95 @@
 # AlbFetcharr frontend
 
-React 19 + Vite SPA для [AlbFetcharr](https://github.com/semsemyonoff/albfetcharr) —
-интерфейс из трёх шагов (Select → Results → Download). Общается с бэкендом
-исключительно по HTTP (`/api`, `/static`); общего кода или файловой системы с
-бэкендом нет — он живёт в отдельном репозитории.
+The React 19 + Vite single-page app for
+[AlbFetcharr](https://github.com/semsemyonoff/AlbFetcharr-backend) — a three-step
+UI (Select → Results → Download). It talks to the backend purely over HTTP
+(`/api`, `/static`); there's no shared code or filesystem — the backend lives in
+its own repo.
 
-## Требования
+> **This repo is the UI, not its deployment.** The production image bundles the
+> built SPA into the backend image; the Docker/compose wiring lives in the deploy
+> repo: [`AlbFetcharr/deploy`](https://github.com/semsemyonoff/AlbFetcharr-deploy).
+
+## Requirements
 
 - Node.js 20.19+
 
-## Разработка
+## Development
 
 ```bash
 npm install
-npm run dev          # Vite dev server на :5173 с HMR
+npm run dev          # Vite dev server on :5173 with HMR
 ```
 
-Dev-сервер проксирует `/api` и `/static` на бэкенд. По умолчанию цель —
-`http://localhost:5000`; переопределяется переменной `BACKEND_URL`:
+The dev server proxies `/api` and `/static` to the backend. The target defaults
+to `http://localhost:5000`; override it with `BACKEND_URL`:
 
 ```bash
 BACKEND_URL=http://localhost:5001 npm run dev
 ```
 
-Откройте `http://localhost:5173` — правки подхватываются на лету.
+Open `http://localhost:5173` — edits hot-reload.
 
-## Продакшен-сборка
-
-```bash
-npm run build        # вывод в dist/ (base = /static/dist/)
-```
-
-Бэкенд отдаёт собранный SPA из `static/dist/`: артефакт сборки кладётся туда на
-этапе деплоя (Docker/compose-обвязка живёт вне этого репозитория).
-
-## Тесты
+## Production build
 
 ```bash
-npm test             # Vitest (vitest --run)
+npm run build        # output in dist/ (base = /static/dist/)
 ```
 
-Покрываются чистые помощники (сортировка, фильтрация, пагинация, разбор SSE) и
-переводы (`src/i18n.js`).
+The backend serves the built SPA from `static/dist/`; the build artifact is
+dropped there at deploy time (the Docker/compose wiring lives outside this repo).
 
-## Структура
+## Tests & lint
 
-- `index.html` — точка входа Vite.
-- `src/main.jsx` — точка входа React, импортирует `styles.css`.
-- `src/app.jsx` — корневой компонент с пошаговым flow.
-- `src/select-step.jsx`, `src/results-step.jsx`, `src/download-step.jsx` — три шага.
-- `src/wanted-helpers.js` — маппинг ответа `/api/wanted` → UI-объект альбома
-  (`mapWantedAlbum`), форматирование длительности, метки типа альбома,
-  получение списка библиотек (`deriveLibraries`).
-- `src/cover.jsx` — компонент `<Cover>`: реальная обложка из `cover_url`
-  с фолбэком на vinyl-stripe-заглушку при ошибке или отсутствии URL.
-- `src/*-helpers.js` — чистые помощники для каждого шага (покрыты тестами).
-- `src/accent-helpers.js` — палитра акцента → CSS-переменные (выбор в панели Tweaks).
-- `src/i18n.js` — переводы (EN/RU) + `I18N_FNS`/`pluralRu` (интерполяция и склонения).
-- `src/styles.css` — стили через CSS-переменные (light/dark/system); адаптивная
-  вёрстка с брейк-поинтами 1024/640/380 (на ≤640 таблица шага 1 превращается в карточки).
+```bash
+npm test             # Vitest (vitest run)
+npm run lint         # ESLint
+npm run format       # Prettier (format:check to verify only)
+```
 
-## Настройки
+Tests cover the pure helpers (sorting, filtering, pagination, SSE parsing,
+settings logic) and the translations (`src/i18n.js`), plus component tests for
+the steps and settings.
 
-В интерфейсе есть два раздела управления параметрами:
+## Structure
 
-**Экран настроек** (⚙ в шапке приложения) — глобальные параметры, хранящиеся
-на сервере. Здесь можно включить или отключить источники, задать токены, выбрать
-качество скачивания по умолчанию, пути сохранения и прочие параметры. Для каждого
-поля отображается происхождение значения: **Сохранено** (задано вами), **Из env**
-(переменная окружения) или **По умолчанию**. Кнопка сброса возвращает поле к
-унаследованному значению (env / умолчание). Все изменения применяются пачкой
-кнопкой «Сохранить».
+- `index.html` — Vite entry point.
+- `src/main.jsx` — React entry point; imports `styles.css`.
+- `src/app.jsx` — root component with the step flow.
+- `src/select-step.jsx`, `src/results-step.jsx`, `src/download-step.jsx` — the three steps.
+- `src/settings-step.jsx`, `src/settings-fields.jsx`, `src/settings-catalog.js`,
+  `src/settings-helpers.js` — the server-backed settings screen.
+- `src/session-overrides.jsx` — the per-run override panel ("This run").
+- `src/wanted-helpers.js` — maps the `/api/wanted` response to UI album objects,
+  formats durations, album-type labels, and derives the library list.
+- `src/cover.jsx` — `<Cover>`: real artwork from `cover_url` with a vinyl-stripe
+  fallback when the URL is missing or fails.
+- `src/*-helpers.js` — pure per-feature helpers (covered by tests).
+- `src/accent-helpers.js` — accent palette → CSS variables (chosen in the Tweaks panel).
+- `src/tweaks-panel.jsx` — the appearance/Tweaks panel.
+- `src/icons.jsx` — inline SVG icons.
+- `src/i18n.js` — EN/RU translations plus `I18N_FNS` / `pluralRu` (interpolation, plurals).
+- `src/styles.css` — CSS-variable theming (light/dark/system); responsive layout
+  with 1024/640/380 breakpoints (≤640 turns the step-1 table into cards).
 
-Секретные поля (токены, ключи API) требуют, чтобы в окружении была переменная
-`ALBFETCHARR_SECRET_KEY` — без неё хранение секретов в БД заблокировано.
+## Settings vs per-run overrides
 
-**Панель «Этот запуск»** (на шаге выбора альбомов) — временные переопределения
-параметров скачивания для одной сессии. Они не затрагивают сохранённые настройки
-и передаются только в текущий запрос `/api/download`. Параметры Yandex
-(качество, формат текста, обложка и т. д.) и yt-dlp (формат, качество) сгруппированы
-по провайдеру. При «Начать заново» переопределения сбрасываются.
+The UI has two places to control parameters:
 
-## Конвенции
+- **Settings screen** (⚙ in the header) — global, server-stored settings: enable
+  or disable sources, set tokens, default download quality, paths, etc. Each field
+  shows the value's origin — **Saved** (set by you), **From env**, or **Default** —
+  and a reset returns it to the inherited value. Changes are saved as a batch.
+  Secret fields (tokens, API keys) require `ALBFETCHARR_SECRET_KEY` in the
+  environment; without it, storing secrets in the DB is blocked.
+- **"This run" panel** (on the select step) — temporary, single-session overrides
+  for download parameters. They don't touch saved settings and are sent only with
+  the current `/api/download` request. Yandex parameters (quality, lyrics format,
+  cover, …) and yt-dlp parameters (format, quality) are grouped by provider.
+  "Start over" clears the overrides.
 
-- Чистый JavaScript + JSX (без TypeScript).
-- Только `useState` / `useReducer`, без стейт-менеджеров.
-- Абсолютные пути API (`/api/...`), чтобы dev-прокси и прод работали одинаково.
+## Conventions
+
+- Plain JavaScript + JSX (no TypeScript).
+- `useState` / `useReducer` only — no state-management library.
+- Absolute API paths (`/api/...`) so the dev proxy and production behave identically.
